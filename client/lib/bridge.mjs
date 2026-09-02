@@ -3,8 +3,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { readCatalog, combineCatalogs } from './catalog.mjs';
-import { acquireClipboard, makeClipboardCode, hasClipboardConfirmation, createSerialGate, clipboardTool } from './clipboard.mjs';
+import { readCatalog, combineCatalogs, connectRemote } from './catalog.mjs';
+import { makeClipboardCode, runClipboardTransfer, createSerialGate, clipboardTool } from './clipboard.mjs';
 import { createSkillLoader, skillTransport, skillUri, prepareTool } from './skill.mjs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -18,9 +18,9 @@ const diagnosticTool = {
 };
 
 export async function createBridge(config, session) {
-  const remote = new Client({ name: 'loginom-dock', version: session.metadata.client });
+  let remote;
   const browser = new Client({ name: 'loginom-dock-browser', version: session.metadata.client });
-  const remoteTransport = new StreamableHTTPClientTransport(new URL(config.endpoint), {
+  const remoteTransport = () => new StreamableHTTPClientTransport(new URL(config.endpoint), {
     requestInit: { headers: { Authorization: `Bearer ${config.apiKey}` }, redirect: 'error' },
   });
   const browserTransport = new StdioClientTransport({
@@ -31,13 +31,13 @@ export async function createBridge(config, session) {
   });
   // Browser stderr may contain page details; never persist or forward it to logs.
   browserTransport.stderr?.on('data', () => {});
-  const closeClients = () => Promise.allSettled([remote.close(), browser.close()]);
+  const closeClients = () => Promise.allSettled([remote?.close(), browser.close()]);
   const browserGate = createSerialGate();
   const heldLeases = new Set();
   const skill = createSkillLoader({ directory: session.directory, transport: skillTransport(config) });
   let clipboardUncertain = false;
   try {
-    const connections = await Promise.allSettled([remote.connect(remoteTransport), browser.connect(browserTransport)]);
+    const connections = await Promise.allSettled([connectRemote(() => ({ client: new Client({ name: 'loginom-dock', version: session.metadata.client }), transport: remoteTransport() })).then(client => { remote = client; }), browser.connect(browserTransport)]);
     const failed = connections.find(result => result.status === 'rejected');
     if (failed) throw failed.reason;
     const [remoteTools, browserTools] = await Promise.all([readCatalog(remote), readCatalog(browser)]);
@@ -97,22 +97,15 @@ export async function createBridge(config, session) {
             return browser.callTool(request.params, undefined, { signal: extra.signal, timeout: 360000 });
           }
           const { code, token } = makeClipboardCode(request.params.arguments);
-          const lease = await acquireClipboard({ signal: extra.signal });
-          heldLeases.add(lease);
-          let completed = false;
-          try {
-            // Once copy starts, cancellation must not release the host lease while
-            // the browser could still paste. Wait for a terminal browser result.
-            const result = await browser.callTool({ name: 'browser_run_code_unsafe', arguments: { code } }, undefined, { timeout: 360000 });
-            completed = true;
-            if (!hasClipboardConfirmation(result, token)) {
-              return { isError: true, content: [{ type: 'text', text: 'Clipboard operation ended without confirmed paste. Inspect the target DOM before retrying.' }] };
-            }
-            return { content: [{ type: 'text', text: 'Copy and paste completed; the target DOM confirmed the result.' }] };
-          } finally {
-            if (completed) { await lease.release(); heldLeases.delete(lease); }
-            else clipboardUncertain = true; // Keep the lease until browser shutdown.
-          }
+          const confirmed = await runClipboardTransfer({
+            token, leases: heldLeases, signal: extra.signal,
+            onUncertain: () => { clipboardUncertain = true; },
+            // Once copy starts, cancellation cannot free the host lease while
+            // the browser may still paste. Shutdown releases retained leases.
+            execute: () => browser.callTool({ name: 'browser_run_code_unsafe', arguments: { code } }, undefined, { timeout: 360000 }),
+          });
+          if (!confirmed) return { isError: true, content: [{ type: 'text', text: 'Paste was not confirmed. The clipboard lock is retained; restart this Dock client before further browser operations.' }] };
+          return { content: [{ type: 'text', text: 'Copy and paste completed; the target DOM confirmed the result.' }] };
         });
       } catch (error) {
         const message = String(error.message).replaceAll(config.apiKey, '[redacted]');

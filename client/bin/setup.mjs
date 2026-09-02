@@ -180,7 +180,7 @@ try {
   stage = 'итоговая диагностика';
   const diagnosis = await diagnoseConnection(config);
   for (const [name, check] of Object.entries(diagnosis.checks)) {
-    const labels = { server: 'Сервер Dock', sources: 'Три источника знаний', skill: 'Пакет инструкций', loginom: 'Страница Loginom' };
+    const labels = { browserEnvironment: 'Графическое окружение', server: 'Сервер Dock', sources: 'Три источника знаний', skill: 'Пакет инструкций', loginom: 'Страница Loginom' };
     console.log(`${labels[name]}: ${check.ok ? 'доступно' : check.message || 'проверка не пройдена'}`);
   }
   if (!diagnosis.ok) console.log('Среда установлена, но подключение требует указанных исправлений. Повторите диагностику после их выполнения.');

@@ -26,18 +26,27 @@ test('diagnostics separate Dock authentication from Loginom reachability and nev
       : Response.json({}, { status: 401 });
     return Response.json({ status: missingSource ? 'error' : 'ok' });
   };
-  const good = await diagnoseConnection(config, { fetcher, manifest });
+  const good = await diagnoseConnection(config, { fetcher, manifest, platform: 'darwin' });
   assert.equal(good.ok, true);
   assert.equal(good.checks.loginom.browserLogin, 'not_checked');
+  const noDisplay = await diagnoseConnection(config, { fetcher, manifest, platform: 'linux', environment: {} });
+  assert.equal(noDisplay.ok, false);
+  assert.equal(noDisplay.checks.server.ok, true);
+  assert.equal(noDisplay.checks.browserEnvironment.ok, false);
+  for (const environment of [{ DISPLAY: ':1' }, { WAYLAND_DISPLAY: 'wayland-0' }]) {
+    const withDisplay = await diagnoseConnection(config, { fetcher, manifest, platform: 'linux', environment });
+    assert.equal(withDisplay.ok, true);
+    assert.equal(withDisplay.checks.browserEnvironment.browserLaunch, 'not_checked');
+  }
   keyAccepted = false;
-  const denied = await diagnoseConnection(config, { fetcher, manifest });
+  const denied = await diagnoseConnection(config, { fetcher, manifest, platform: 'darwin' });
   assert.equal(denied.ok, false); assert.match(denied.checks.server.message, /ключ/i);
   assert.equal(denied.checks.sources, undefined);
   keyAccepted = true; missingSource = true;
-  assert.equal((await diagnoseConnection(config, { fetcher, manifest })).checks.sources.ok, false);
+  assert.equal((await diagnoseConnection(config, { fetcher, manifest, platform: 'darwin' })).checks.sources.ok, false);
   targetStatus = 302;
-  assert.equal((await diagnoseConnection(config, { fetcher, manifest })).checks.loginom.ok, false);
-  assert.equal((await diagnoseConnection({ ...config, loginomUrl: 'https://loginom.example/' }, { fetcher, manifest })).checks.loginom.ok, false);
+  assert.equal((await diagnoseConnection(config, { fetcher, manifest, platform: 'darwin' })).checks.loginom.ok, false);
+  assert.equal((await diagnoseConnection({ ...config, loginomUrl: 'https://loginom.example/' }, { fetcher, manifest, platform: 'darwin' })).checks.loginom.ok, false);
 });
 
 test('agent compatibility rejects absent, older and unvalidated major versions', () => {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
-import { acquireClipboard, makeClipboardCode, hasClipboardConfirmation, createSerialGate } from '../lib/clipboard.mjs';
+import { acquireClipboard, makeClipboardCode, hasClipboardConfirmation, createSerialGate, runClipboardTransfer } from '../lib/clipboard.mjs';
 
 test('serializes separate processes and releases the kernel lease after a crash', async (t) => {
   const first = await acquireClipboard({ port: 0 });
@@ -55,4 +55,30 @@ test('serializes browser operations even when the previous operation fails', asy
   await assert.rejects(a, /unconfirmed/);
   await b;
   assert.deepEqual(events, ['copy', 'paste', 'next']);
+});
+
+
+test('unconfirmed paste retains the host lease until browser shutdown, including completed tool errors', async () => {
+  for (const outcome of ['unconfirmed', 'tool-error', 'transport-error', 'confirmed']) {
+    const leases = new Set(); let port, uncertain = false;
+    const execute = async () => {
+      if (outcome === 'transport-error') throw new Error('connection interrupted');
+      return { isError: outcome === 'tool-error', content: [{ type: 'text', text: '### Result\n' + JSON.stringify({ dockClipboardConfirmation: outcome === 'unconfirmed' ? 'other' : 'expected' }) }] };
+    };
+    const operation = runClipboardTransfer({ execute, token: 'expected', leases,
+      onUncertain: () => { uncertain = true; },
+      acquire: async () => { const lease = await acquireClipboard({ port: 0 }); port = lease.port; return lease; },
+    });
+    try {
+      if (outcome === 'transport-error') await assert.rejects(operation, /interrupted/);
+      else assert.equal(await operation, outcome === 'confirmed');
+      assert.equal(uncertain, outcome !== 'confirmed');
+      if (outcome !== 'confirmed') {
+        assert.equal(leases.size, 1);
+        await assert.rejects(acquireClipboard({ port, timeoutMs: 40 }), /holds the clipboard/);
+      } else assert.equal(leases.size, 0);
+    } finally { await Promise.all([...leases].map(lease => lease.release())); }
+    const next = await acquireClipboard({ port, timeoutMs: 100 });
+    await next.release();
+  }
 });

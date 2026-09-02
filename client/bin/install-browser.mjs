@@ -17,4 +17,16 @@ const cli = join(dirname(require.resolve('playwright-core/package.json')), 'cli.
 const result = spawnSync(process.execPath, [cli, 'install', 'chromium'], {
   env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browserRoot }, stdio: 'inherit',
 });
-process.exitCode = result.status ?? 1;
+if (result.status !== 0) process.exitCode = result.status ?? 1;
+else {
+  process.env.PLAYWRIGHT_BROWSERS_PATH = browserRoot;
+  try {
+    const { chromium } = await import('playwright-core');
+    const browser = await chromium.launch({ headless: true });
+    await browser.close();
+    console.log('Браузер Dock загружен и проверен запуском.');
+  } catch {
+    console.error('Браузер загружен, но не запускается. В Linux проверьте системные библиотеки Chromium: используйте install-deps chromium у Playwright из этого комплекта.');
+    process.exitCode = 1;
+  }
+}

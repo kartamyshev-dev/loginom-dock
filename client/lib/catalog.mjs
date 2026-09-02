@@ -1,5 +1,20 @@
 import { createHash } from 'node:crypto';
 
+export async function connectRemote(create) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { client, transport } = create();
+    try {
+      await client.connect(transport, { timeout: 25000 });
+      return client;
+    } catch (error) {
+      await client.close().catch(() => {});
+      const transient = (error instanceof TypeError && error.message === 'fetch failed')
+        || [502, 503, 504].includes(error.code ?? error.status);
+      if (attempt || !transient) throw error;
+    }
+  }
+}
+
 export async function readCatalog(client) {
   const tools = [];
   const seen = new Set();

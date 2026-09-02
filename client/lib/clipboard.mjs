@@ -58,6 +58,22 @@ export function hasClipboardConfirmation(result, token) {
   return false;
 }
 
+// An answered tool call can still leave paste unconfirmed. Keep its lease until
+// browser shutdown unless the actual target confirmation was received.
+export async function runClipboardTransfer({ execute, token, leases, onUncertain, signal, acquire = acquireClipboard }) {
+  const lease = await acquire({ signal });
+  leases.add(lease);
+  let confirmed = false;
+  try {
+    const result = await execute();
+    confirmed = hasClipboardConfirmation(result, token);
+    return confirmed;
+  } finally {
+    if (confirmed) { await lease.release(); leases.delete(lease); }
+    else onUncertain();
+  }
+}
+
 export function createSerialGate() {
   let tail = Promise.resolve();
   return operation => {
