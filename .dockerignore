@@ -12,9 +12,21 @@ target/
 src/build/
 docs/.vitepress/dist/
 web-studio/node_modules
+client/node_modules
 web-studio/dist
 openviking/web_studio/dist
 web-studio/.vite
 node_modules
 *.log
 *.tmp
+
+# Dock secrets and local state
+.env
+.env.*
+**/.env
+**/.env.*
+.dock/
+.openviking/
+*.state.json
+**/*.state.json
+output/

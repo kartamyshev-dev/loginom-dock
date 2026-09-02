@@ -9,6 +9,7 @@ This is the DataAccessor layer extracted from CodeRepositoryParser.
 
 import asyncio
 import contextlib
+import json
 import os
 import shutil
 import stat
@@ -33,6 +34,7 @@ from openviking.utils.git_auth import (
     build_git_http_auth_env,
     parse_git_http_auth_config,
 )
+from openviking_cli.utils.config import get_openviking_config
 from openviking_cli.utils.logger import get_logger
 
 from .base import DataAccessor, LocalResource, SourceType
@@ -108,6 +110,12 @@ class GitAccessor(DataAccessor):
         commit = kwargs.get("commit")
         auth_config = parse_git_http_auth_config(kwargs.get("auth_config"), source_str)
         git_env = None
+        preserve_source_files = kwargs.get(
+            "preserve_source_files",
+            getattr(get_openviking_config().code, "preserve_source_files", False),
+        )
+        if not isinstance(preserve_source_files, bool):
+            raise ValueError("preserve_source_files must be a boolean")
 
         try:
             # Create local temp directory (non-blocking)
@@ -131,7 +139,11 @@ class GitAccessor(DataAccessor):
                 repo_url, branch, commit = self._parse_repo_source(source_str, **kwargs)
                 if auth_config is not None:
                     git_env = build_git_http_auth_env(auth_config, repo_url)
-                if self._is_github_url(repo_url) and auth_config is None:
+                if (
+                    self._is_github_url(repo_url)
+                    and auth_config is None
+                    and not preserve_source_files
+                ):
                     # Try GitHub ZIP API first, fall back to git clone
                     try:
                         local_dir, repo_name = await self._github_zip_download(
@@ -158,7 +170,11 @@ class GitAccessor(DataAccessor):
                             commit=commit,
                             env=git_env,
                         )
-                elif self._can_use_gitlab_zip(repo_url) and auth_config is None:
+                elif (
+                    self._can_use_gitlab_zip(repo_url)
+                    and auth_config is None
+                    and not preserve_source_files
+                ):
                     # Try GitLab ZIP API first, fall back to git clone
                     try:
                         local_dir, repo_name = await self._gitlab_zip_download(
@@ -197,6 +213,12 @@ class GitAccessor(DataAccessor):
             else:
                 raise ValueError(f"Unsupported source for GitAccessor: {source}")
 
+            if preserve_source_files:
+                # Clone's smudge filter follows .gitattributes and can miss valid
+                # pointers (e.g. .PNG when the repository only tracks *.png).
+                # Native LFS scans the selected ref; retain request-scoped auth.
+                await self._hydrate_lfs_checkout(local_dir, git_env)
+
             # Build metadata
             # repo_name is in "org/repo" format (e.g. "volcengine/OpenViking")
             # This is extracted via parse_code_hosting_url() from the original URL
@@ -227,6 +249,60 @@ class GitAccessor(DataAccessor):
                 except Exception:
                     pass
             raise
+
+    async def _hydrate_lfs_checkout(self, path: Path, env: Optional[dict[str, str]]) -> None:
+        """Hydrate native LFS pointers without modifying committed attributes."""
+        inventory = json.loads(
+            await self._run_git(["git", "-C", str(path), "lfs", "ls-files", "--json"], env=env)
+        )
+        attributes = path / ".git" / "info" / "attributes"
+
+        def prepare_attributes():
+            patterns = []
+            for entry in inventory["files"]:
+                if entry["checkout"]:
+                    continue
+                relative = PurePosixPath(entry["name"])
+                source = path / relative
+                if relative.is_absolute() or ".." in relative.parts or source.is_symlink():
+                    raise ValueError("Unsafe Git LFS source path")
+                if not source.resolve().is_relative_to(path.resolve()):
+                    raise ValueError("Git LFS source escaped checkout")
+                with source.open("rb") as stream:
+                    if not stream.read(1024).startswith(
+                        b"version https://git-lfs.github.com/spec/v1\n"
+                    ):
+                        continue
+                # Attributes patterns are globs even inside C-style quotes.
+                pattern = "/" + str(relative)
+                for char in ("\\", "*", "?", "["):
+                    pattern = pattern.replace(char, "\\" + char)
+                patterns.append(
+                    json.dumps(pattern, ensure_ascii=False)
+                    + " filter=lfs diff=lfs merge=lfs -text\n"
+                )
+            if not patterns:
+                return False, None
+            if attributes.is_symlink() or not attributes.resolve().is_relative_to(
+                (path / ".git").resolve()
+            ):
+                raise ValueError("Unsafe Git LFS checkout attributes")
+            previous = attributes.read_bytes() if attributes.exists() else None
+            attributes.parent.mkdir(parents=True, exist_ok=True)
+            attributes.write_bytes((previous or b"") + b"\n" + "".join(patterns).encode())
+            return True, previous
+
+        changed, previous = await asyncio.to_thread(prepare_attributes)
+        try:
+            await self._run_git(
+                ["git", "-C", str(path), "lfs", "pull", "--include=", "--exclude="], env=env
+            )
+        finally:
+            if changed:
+                if previous is None:
+                    await asyncio.to_thread(attributes.unlink)
+                else:
+                    await asyncio.to_thread(attributes.write_bytes, previous)
 
     def _parse_repo_source(self, source: str, **kwargs) -> Tuple[str, Optional[str], Optional[str]]:
         """Parse repository source URL to extract branch/commit info."""

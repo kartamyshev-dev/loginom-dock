@@ -53,6 +53,7 @@ class _SyncMixin:
         lease_ref: Optional[Dict[str, Any]] = None,
         delete_temp_after: bool = False,
         is_changed: Optional[Callable[[str, str, "RequestContext"], "bool"]] = None,
+        include_hidden: bool = False,
     ) -> SyncDiff:
         """Recursively merge ``root_uri`` into ``target_uri``.
 
@@ -78,6 +79,8 @@ class _SyncMixin:
                 ctx) -> bool`` used to decide if an existing file needs to
                 be replaced.  Defaults to a stat-size shortcut followed by
                 byte-for-byte content comparison.
+            include_hidden: Include hidden children for an explicitly managed
+                raw source subtree. Normal semantic trees keep the default False.
 
         Returns:
             A :class:`SyncDiff` describing the applied changes (URIs are
@@ -101,7 +104,7 @@ class _SyncMixin:
                 name = entry.get("name", "")
                 if not name or name in [".", ".."]:
                     continue
-                if name.startswith("."):
+                if name.startswith(".") and not include_hidden:
                     continue
                 item_uri = VikingURI(dir_uri).join(name).uri
                 if entry.get("isDir", False):

@@ -1,0 +1,4 @@
+{$LOGINOM_DOCK_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy openviking:1933
+}

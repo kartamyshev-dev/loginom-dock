@@ -99,12 +99,22 @@ RUN --mount=type=cache,target=/root/.cache/uv,id=uv-${TARGETPLATFORM} \
 # Stage 4: runtime
 FROM python:3.13-slim-trixie
 
+ARG LOGINOM_DOCK_REVISION=working-tree
+LABEL org.opencontainers.image.title="Loginom Dock" \
+      org.opencontainers.image.description="Loginom knowledge and agent integration, powered by OpenViking" \
+      org.opencontainers.image.source="https://github.com/kartamyshev-dev/loginom-dock" \
+      org.opencontainers.image.licenses="AGPL-3.0" \
+      org.opencontainers.image.revision="${LOGINOM_DOCK_REVISION}"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
+    git-lfs \
+    openssh-client \
     libstdc++6 \
     ripgrep \
+ && git lfs install --system \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -129,11 +139,11 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD ["openviking-entrypoint", "--healthcheck"]
 
 # All persistent state (ov.conf, ovcli.conf, workspace data) lives under
-# /app/.openviking, which mirrors the host's ~/.openviking layout. Mount one
+# /app/.openviking (the upstream internal layout). Mount a Dock-owned
 # volume there to persist everything across container restarts:
-#   docker run -v ~/.openviking:/app/.openviking <image>
+#   docker run -v loginom-dock-data:/app/.openviking <image>
 # If ov.conf is absent on first start, set OPENVIKING_CONF_CONTENT to the full
 # JSON, or `docker exec` in and run `openviking-server init`.
 # Override command to run CLI, e.g.:
-# docker run --rm -v ~/.openviking:/app/.openviking <image> openviking --help
+# docker run --rm -v loginom-dock-data:/app/.openviking <image> openviking --help
 ENTRYPOINT ["openviking-entrypoint"]

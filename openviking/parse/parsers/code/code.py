@@ -125,6 +125,11 @@ class CodeRepositoryParser(BaseParser):
         """
         start_time = time.time()
         source_path = Path(source)
+        preserve_source_files = kwargs.get(
+            "preserve_source_files", get_openviking_config().code.preserve_source_files
+        )
+        if not isinstance(preserve_source_files, bool):
+            raise ValueError("preserve_source_files must be a boolean")
 
         # Check if source is already a local directory (should always be true)
         if not source_path.is_dir():
@@ -170,6 +175,11 @@ class CodeRepositoryParser(BaseParser):
             logger.info(f"Uploading to VikingFS: {target_root_uri}")
 
             # 4. Upload to VikingFS (filtering on the fly)
+            source_options = {}
+            if preserve_source_files:
+                source_options["ignore_extensions"] = self.IGNORE_EXTENSIONS | set(
+                    get_openviking_config().code.source_only_extensions
+                )
             file_count = await self._upload_directory(
                 local_dir,
                 target_root_uri,
@@ -177,9 +187,16 @@ class CodeRepositoryParser(BaseParser):
                 ignore_dirs=kwargs.get("ignore_dirs"),
                 include=kwargs.get("include"),
                 exclude=kwargs.get("exclude"),
+                **source_options,
             )
 
             logger.info(f"Uploaded {file_count} files to {target_root_uri}")
+
+            source_manifest = None
+            if preserve_source_files:
+                from .source_snapshot import preserve_git_source
+
+                source_manifest = await preserve_git_source(local_dir, target_root_uri, viking_fs)
 
             # 5. Create result
             # Root node is just a placeholder, TreeBuilder relies on temp_dir_path
@@ -211,6 +228,9 @@ class CodeRepositoryParser(BaseParser):
             result.temp_dir_path = temp_viking_uri  # Points to parent of repo_name
             result.meta["file_count"] = file_count
             result.meta["repo_name"] = repo_name
+            if source_manifest is not None:
+                result.meta["source_file_count"] = len(source_manifest["files"])
+                result.meta["source_commit"] = source_manifest["commit"]
             if branch:
                 result.meta["repo_ref"] = branch
             if commit:
@@ -220,6 +240,8 @@ class CodeRepositoryParser(BaseParser):
 
         except Exception as e:
             logger.error(f"Failed to parse repository {source}: {e}", exc_info=True)
+            if preserve_source_files:
+                raise
             # Use original URL for error case as well - still important for TreeBuilder
             # Even on failure, we want TreeBuilder to potentially get org/repo from the URL
             original_source = kwargs.get("original_source") or source_meta.get("original_source")
@@ -588,6 +610,7 @@ class CodeRepositoryParser(BaseParser):
         ignore_dirs: Optional[Union[Set[str], List[str], str]] = None,
         include: Optional[str] = None,
         exclude: Optional[str] = None,
+        ignore_extensions: Optional[Set[str]] = None,
     ) -> int:
         """Recursively upload directory to VikingFS using shared upload utilities."""
         count, _ = await upload_directory(
@@ -597,5 +620,6 @@ class CodeRepositoryParser(BaseParser):
             ignore_dirs=ignore_dirs,
             include=include,
             exclude=exclude,
+            ignore_extensions=ignore_extensions,
         )
         return count

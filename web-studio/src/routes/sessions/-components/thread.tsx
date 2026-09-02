@@ -11,7 +11,7 @@ import { MemoryImpact } from './memory-impact'
 import { Composer } from './composer'
 
 const PixelBlast = lazy(() => import('#/components/ui/pixel-blast'))
-const PRODUCT_NAME = 'OpenViking'
+const PRODUCT_NAME = 'Loginom Dock'
 
 interface ThreadProps {
   sessionId: string

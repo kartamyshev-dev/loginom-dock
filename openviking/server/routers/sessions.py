@@ -145,6 +145,12 @@ class AddMessageRequest(BaseModel):
         Literal["user_query", "assistant_step", "tool_transport", "checkpoint"]
     ] = None
     source_message_ids: Optional[List[str]] = None
+    deduplication_key: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=256,
+        description="Optional delivery identity, unique within this session. First write wins, including after commit.",
+    )
     telemetry: TelemetryRequest = False
 
     @field_validator("peer_id")
@@ -373,8 +379,8 @@ async def get_session(
     result["pending_tokens"] = int(session.meta.pending_tokens or 0)
     result["auto_commit_policy"] = service.sessions.effective_auto_commit_policy(session)
     result.pop("event_search_tags", None)
-    result["memory_extraction_config"] = (
-        service.sessions.effective_memory_extraction_config(session)
+    result["memory_extraction_config"] = service.sessions.effective_memory_extraction_config(
+        session
     )
     return Response(status="ok", result=result)
 
@@ -407,9 +413,7 @@ async def update_session_config(
     from openviking_cli.exceptions import NotFoundError
 
     service = get_service()
-    event_tags = _event_tags_from_extraction_config(
-        request.memory_extraction_config
-    )
+    event_tags = _event_tags_from_extraction_config(request.memory_extraction_config)
     update_auto_commit_policy = "auto_commit_policy" in request.model_fields_set
     auto_commit_policy = (
         request.auto_commit_policy.model_dump(exclude_none=True)
@@ -441,9 +445,9 @@ async def update_session_config(
         )
     except NotFoundError:
         return error_response("NOT_FOUND", f"Session {session_id} not found")
-    return Response(
-        status="ok", result=execution.result, telemetry=execution.telemetry
-    ).model_dump(exclude_none=True)
+    return Response(status="ok", result=execution.result, telemetry=execution.telemetry).model_dump(
+        exclude_none=True
+    )
 
 
 @router.get("/{session_id}/tool-results")
@@ -542,9 +546,7 @@ async def get_session_archive(
     try:
         result = await session.get_session_archive(archive_id)
     except NotFoundError:
-        return error_response(
-            code="NOT_FOUND", message=f"Archive {archive_id} not found"
-        )
+        return error_response(code="NOT_FOUND", message=f"Archive {archive_id} not found")
     return Response(status="ok", result=_to_jsonable(result))
 
 
@@ -746,6 +748,7 @@ async def add_message(
                 "turn_id": request.turn_id,
                 "message_kind": request.message_kind,
                 "source_message_ids": request.source_message_ids,
+                "deduplication_key": request.deduplication_key,
             }
         ]
         add_many_async = getattr(session, "add_messages_async", None)
@@ -802,6 +805,7 @@ async def batch_add_messages(
                     "turn_id": msg_request.turn_id,
                     "message_kind": msg_request.message_kind,
                     "source_message_ids": msg_request.source_message_ids,
+                    "deduplication_key": msg_request.deduplication_key,
                 }
             )
         add_many_async = getattr(session, "add_messages_async", None)

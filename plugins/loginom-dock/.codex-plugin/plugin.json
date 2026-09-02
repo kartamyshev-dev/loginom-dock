@@ -1,0 +1,25 @@
+{
+  "name": "loginom-dock",
+  "version": "0.1.0-dev.0",
+  "description": "Loginom Dock: общие знания Loginom и локальный браузер для выполнения задач.",
+  "author": {
+    "name": "Loginom Dock"
+  },
+  "repository": "https://github.com/kartamyshev-dev/loginom-dock",
+  "license": "AGPL-3.0-only",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Loginom Dock",
+    "shortDescription": "Знания и браузер для задач Loginom",
+    "longDescription": "Загружает проверенный skill с сервера Dock и управляет отдельным локальным окном Loginom. Активированные задачи сохраняются в общей базе после очистки секретов. Требуется мастер подключения Dock.",
+    "developerName": "Loginom Dock",
+    "category": "Productivity",
+    "capabilities": [
+      "Loginom knowledge",
+      "Local browser"
+    ],
+    "websiteURL": "https://loginom.duckdns.org",
+    "defaultPrompt": "Помоги выполнить задачу в Loginom через Dock."
+  }
+}

@@ -146,6 +146,98 @@ async def test_create_session(client: httpx.AsyncClient):
     assert "session_id" in body["result"]
 
 
+async def test_delivery_retries_are_atomic_and_preserve_legacy_duplicates(client):
+    session_id = "delivery-concurrent"
+    payload = {
+        "role": "user",
+        "content": "original",
+        "deduplication_key": "install/session/turn/event",
+    }
+    responses = await asyncio.gather(
+        *[client.post(f"/api/v1/sessions/{session_id}/messages", json=payload) for _ in range(4)]
+    )
+    assert all(response.status_code == 200 for response in responses)
+    replay = await client.post(
+        f"/api/v1/sessions/{session_id}/messages/batch",
+        json={
+            "messages": [
+                {**payload, "content": "must not replace original"},
+                {"role": "user", "content": "legacy duplicate"},
+                {"role": "user", "content": "legacy duplicate"},
+            ]
+        },
+    )
+    assert replay.status_code == 200
+    assert replay.json()["result"]["added"] == 2
+    detail = (await client.get(f"/api/v1/sessions/{session_id}")).json()["result"]
+    assert detail["message_count"] == 3
+    text = json.dumps(detail, ensure_ascii=False)
+    assert "must not replace original" not in text
+
+
+async def test_delivery_retry_after_commit_does_not_restore_archived_message(client):
+    session_id = "delivery-archived"
+    payload = {
+        "role": "user",
+        "content": "archive this exactly once",
+        "deduplication_key": "event-1",
+    }
+    await client.post(f"/api/v1/sessions/{session_id}/messages", json=payload)
+    committed = await client.post(f"/api/v1/sessions/{session_id}/commit")
+    assert committed.status_code == 200
+    replay = await client.post(
+        f"/api/v1/sessions/{session_id}/messages/batch", json={"messages": [payload]}
+    )
+    assert replay.status_code == 200
+    assert replay.json()["result"]["added"] == 0
+    assert replay.json()["result"]["message_count"] == 0
+
+
+async def test_delivery_key_scope_validation_and_split_tool_results(client):
+    payload = {
+        "role": "user",
+        "deduplication_key": "same-key",
+        "parts": [
+            {
+                "type": "tool",
+                "tool_id": f"call-{index}",
+                "tool_name": "fixture",
+                "tool_output": f"result-{index}",
+                "tool_status": "completed",
+            }
+            for index in range(2)
+        ],
+    }
+    for session_id in ["delivery-split-a", "delivery-split-b"]:
+        for expected in [2, 0]:
+            response = await client.post(
+                f"/api/v1/sessions/{session_id}/messages/batch", json={"messages": [payload]}
+            )
+            assert response.status_code == 200
+            assert response.json()["result"]["added"] == expected
+        changed = {**payload, "parts": payload["parts"] + [payload["parts"][0]]}
+        response = await client.post(
+            f"/api/v1/sessions/{session_id}/messages/batch", json={"messages": [changed]}
+        )
+        assert response.json()["result"]["added"] == 0
+        await client.post(f"/api/v1/sessions/{session_id}/commit")
+        response = await client.post(
+            f"/api/v1/sessions/{session_id}/messages/batch", json={"messages": [changed]}
+        )
+        assert response.json()["result"]["added"] == 0
+    same_batch = await client.post(
+        "/api/v1/sessions/delivery-split-same-batch/messages/batch",
+        json={"messages": [payload, changed]},
+    )
+    assert same_batch.json()["result"]["added"] == 2
+    for key in ["", "x" * 257]:
+        response = await client.post(
+            "/api/v1/sessions/delivery-invalid/messages",
+            json={"role": "user", "content": "hello", "deduplication_key": key},
+        )
+        assert response.status_code == 400
+
+
 async def test_list_sessions(client: httpx.AsyncClient):
     # Create a session first
     await client.post("/api/v1/sessions", json={})
@@ -1343,9 +1435,11 @@ async def test_get_session_context_endpoint_returns_trimmed_latest_archive_and_m
     )
 
 
+@pytest.mark.parametrize("working_memory_enabled", [True, False])
 async def test_get_session_archive_endpoint_returns_archive_details(
     client: httpx.AsyncClient,
     service,
+    working_memory_enabled,
 ):
     # See test_get_session_context_*: stub memory extraction (not covered by the
     # server fake VLM) so the archive completes; this test checks the archive
@@ -1356,7 +1450,10 @@ async def test_get_session_archive_endpoint_returns_archive_details(
 
     service.sessions._session_compressor.extract_long_term_memories = _no_memories
 
-    create_resp = await client.post("/api/v1/sessions", json={})
+    create_resp = await client.post(
+        "/api/v1/sessions",
+        json={"memory_policy": {"working_memory": {"enabled": working_memory_enabled}}},
+    )
     session_id = create_resp.json()["result"]["session_id"]
 
     await client.post(
@@ -1376,8 +1473,8 @@ async def test_get_session_archive_endpoint_returns_archive_details(
     body = resp.json()
     assert body["status"] == "ok"
     assert body["result"]["archive_id"] == "archive_001"
-    assert body["result"]["overview"]
-    assert body["result"]["abstract"]
+    assert bool(body["result"]["overview"]) is working_memory_enabled
+    assert bool(body["result"]["abstract"]) is working_memory_enabled
     assert [m["parts"][0]["text"] for m in body["result"]["messages"]] == [
         "archived question",
         "archived answer",

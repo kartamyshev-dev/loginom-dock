@@ -97,12 +97,12 @@ const activity = {
       loading: '正在加载授权请求…',
       expired: '此次授权已过期或不再有效，请从 MCP 客户端重新发起。',
       missingPending: '缺少授权 ID，请打开 MCP 客户端给出的链接。',
-      requestSummary: '{{clientName}} 请求访问你的 OpenViking 工作区。',
+      requestSummary: '{{clientName}} 请求访问你的 Loginom Dock 工作区。',
       redirectLabel: '回跳地址',
       scopesLabel: '权限范围',
       scopesNone: '（无）',
       signInRequired:
-        '请先在“连接设置”中配置 OpenViking Studio 身份凭证，或在下方临时粘贴 API 密钥完成授权。',
+        '请先在“连接设置”中配置 Loginom Dock 身份凭证，或在下方临时粘贴 API 密钥完成授权。',
       openConnectionSettings: '打开连接设置',
       authorize: '授权',
       deny: '拒绝',
@@ -125,7 +125,7 @@ const activity = {
       verifyError: '授权失败：{{message}}',
       noApiKey: '没有可用的 API 密钥。请选择一个身份或粘贴密钥。',
       signInRequired:
-        '请先在“连接设置”中配置 OpenViking Studio 身份凭证，或在下方临时粘贴 API 密钥完成验证。',
+        '请先在“连接设置”中配置 Loginom Dock 身份凭证，或在下方临时粘贴 API 密钥完成验证。',
     },
   },
   playground: {
@@ -211,7 +211,7 @@ const activity = {
       globalScope: '全局',
       opened: '已打开资源',
       onlineTitle: '服务在线',
-      onlineBody: 'OpenViking API 正常响应，根目录下发现 {{count}} 个节点。',
+      onlineBody: 'Loginom Dock API 正常响应，根目录下发现 {{count}} 个节点。',
       lsBody: '{{uri}} 下共展示 {{count}} 个节点。',
       fileEmpty: '文件为空，已在中间预览区打开。',
       searchUsage: '用法：{{name}} 查询词 [--scope .|viking://resources/...]',

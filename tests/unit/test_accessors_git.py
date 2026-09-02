@@ -4,7 +4,10 @@
 
 import asyncio
 import base64
+import hashlib
 import os
+import shutil
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
@@ -37,8 +40,7 @@ _GENERIC_CODE_HOSTING_DOMAINS = [
 def _git_config_entries(env: dict[str, str]) -> dict[str, str]:
     count = int(env["GIT_CONFIG_COUNT"])
     return {
-        env[f"GIT_CONFIG_KEY_{index}"]: env[f"GIT_CONFIG_VALUE_{index}"]
-        for index in range(count)
+        env[f"GIT_CONFIG_KEY_{index}"]: env[f"GIT_CONFIG_VALUE_{index}"] for index in range(count)
     }
 
 
@@ -54,8 +56,7 @@ def test_git_http_auth_config_defaults_username_and_builds_isolated_env() -> Non
     assert config.token == "secret-token"
     assert "secret-token" not in repr(config)
     assert git_http_basic_auth_header(config) == (
-        "Authorization: Basic "
-        + base64.b64encode(b"oauth2:secret-token").decode("ascii")
+        "Authorization: Basic " + base64.b64encode(b"oauth2:secret-token").decode("ascii")
     )
 
     repo_url = "https://git.example.com/org/private.git"
@@ -153,6 +154,107 @@ class TestGitAccessor:
     def test_priority(self, accessor: GitAccessor) -> None:
         """GitAccessor should have correct priority."""
         assert accessor.priority == 80
+
+    @pytest.mark.parametrize(
+        "source", ["https://github.com/org/repo.git", "https://gitlab.com/org/repo.git"]
+    )
+    @pytest.mark.parametrize("with_auth", [False, True])
+    async def test_preservation_uses_git_and_native_lfs_with_request_auth(
+        self, accessor: GitAccessor, tmp_path: Path, source: str, with_auth: bool
+    ) -> None:
+        with (
+            patch(
+                "openviking.parse.accessors.git_accessor.tempfile.mkdtemp",
+                return_value=str(tmp_path),
+            ),
+            patch.object(accessor, "_git_clone", new_callable=AsyncMock) as clone,
+            patch.object(accessor, "_github_zip_download", new_callable=AsyncMock) as github_zip,
+            patch.object(accessor, "_gitlab_zip_download", new_callable=AsyncMock) as gitlab_zip,
+            patch.object(
+                accessor, "_run_git", new_callable=AsyncMock, side_effect=['{"files": []}', ""]
+            ) as run,
+        ):
+            await accessor.access(
+                source,
+                preserve_source_files=True,
+                auth_config={"username": "test", "token": "test-token"} if with_auth else None,
+            )
+        github_zip.assert_not_awaited()
+        gitlab_zip.assert_not_awaited()
+        env = clone.await_args.kwargs["env"]
+        if with_auth:
+            assert env["GIT_TERMINAL_PROMPT"] == "0"
+        else:
+            assert env is None
+        assert [call.args[0] for call in run.await_args_list] == [
+            ["git", "-C", str(tmp_path), "lfs", "ls-files", "--json"],
+            ["git", "-C", str(tmp_path), "lfs", "pull", "--include=", "--exclude="],
+        ]
+        assert all(call.kwargs["env"] is env for call in run.await_args_list)
+
+    @pytest.mark.parametrize("filename", ["example.PNG", "with space [x]*?.PNG"])
+    async def test_native_lfs_recovers_pointer_missing_from_attributes(
+        self, accessor: GitAccessor, tmp_path: Path, monkeypatch, filename: str
+    ) -> None:
+        if not shutil.which("git-lfs"):
+            pytest.skip("native Git LFS is required")
+        monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+        monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+        monkeypatch.delenv("GIT_CONFIG_COUNT", raising=False)
+        monkeypatch.delenv("GIT_LFS_SKIP_SMUDGE", raising=False)
+        origin = tmp_path / "origin"
+        origin.mkdir()
+
+        def git(*args):
+            subprocess.run(
+                ["git", "-C", str(origin), *args],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
+
+        git("init", "-q")
+        git("config", "user.name", "Dock test")
+        git("config", "user.email", "dock-test@example.invalid")
+        payload = b"\x89PNG\x00Dock source fixture\xff"
+        oid = hashlib.sha256(payload).hexdigest()
+        pointer = f"version https://git-lfs.github.com/spec/v1\noid sha256:{oid}\nsize {len(payload)}\n".encode()
+        (origin / ".gitattributes").write_text("*.png filter=lfs diff=lfs merge=lfs -text\n")
+        (origin / filename).write_bytes(pointer)
+        git("add", ".")
+        git("commit", "-qm", "fixture")
+        object_path = origin / ".git" / "lfs" / "objects" / oid[:2] / oid[2:4] / oid
+        object_path.parent.mkdir(parents=True)
+        object_path.write_bytes(payload)
+
+        async def clone_local(_url, target, **_kwargs):
+            subprocess.run(
+                ["git", "clone", "-q", str(origin), target],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
+            subprocess.run(
+                ["git", "-C", target, "lfs", "install", "--local"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
+            assert (Path(target) / filename).read_bytes() == pointer
+            return "test/repo"
+
+        with patch.object(accessor, "_git_clone", side_effect=clone_local):
+            resource = await accessor.access(
+                "git@example.invalid:test/repo.git", preserve_source_files=True
+            )
+        try:
+            assert (resource.path / filename).read_bytes() == payload
+            assert (resource.path / ".gitattributes").read_bytes() == (
+                origin / ".gitattributes"
+            ).read_bytes()
+            assert not (resource.path / ".git" / "info" / "attributes").exists()
+        finally:
+            shutil.rmtree(resource.path)
 
     @pytest.mark.parametrize(
         "source",
@@ -479,8 +581,7 @@ class TestGitAccessor:
         env = clone_call.kwargs["env"]
         assert token not in " ".join(str(arg) for arg in clone_call.args)
         assert _git_config_entries(env)[f"http.{source}.extraHeader"] == (
-            "Authorization: Basic "
-            + base64.b64encode(f"git-user:{token}".encode()).decode("ascii")
+            "Authorization: Basic " + base64.b64encode(f"git-user:{token}".encode()).decode("ascii")
         )
         assert resource.original_source == source
         assert token not in str(resource.meta)
@@ -645,9 +746,7 @@ class TestGitAccessor:
             new=AsyncMock(return_value=process),
         ):
             with pytest.raises(asyncio.CancelledError):
-                await accessor._run_git(
-                    ["git", "clone", "https://git.example.com/org/private.git"]
-                )
+                await accessor._run_git(["git", "clone", "https://git.example.com/org/private.git"])
 
         process.kill.assert_called_once_with()
         process.wait.assert_awaited_once_with()

@@ -1,7 +1,7 @@
 {
-  "short_name": "OpenViking",
-  "name": "OpenViking Studio",
-  "description": "OpenViking Studio — agent-native context database UI",
+  "short_name": "Loginom Dock",
+  "name": "Loginom Dock",
+  "description": "Loginom knowledge and agent integration, powered by OpenViking",
   "icons": [
     {
       "src": "favicon-32.png",

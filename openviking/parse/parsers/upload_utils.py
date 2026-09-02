@@ -114,6 +114,7 @@ async def upload_directory(
     max_file_size: int = 10 * 1024 * 1024,
     include: Optional[str] = None,
     exclude: Optional[str] = None,
+    source_files: Optional[List[str]] = None,
 ) -> Tuple[int, List[str]]:
     """Upload an entire directory recursively and return uploaded count with warnings.
 
@@ -148,7 +149,22 @@ async def upload_directory(
     files_to_upload: List[Tuple[Path, str]] = []  # (local_path, target_uri)
     parent_uris: Set[str] = {viking_uri_base}
 
-    for root, dirs, files in os.walk(local_dir):
+    # An explicit, validated Git manifest preserves original bytes. This opt-in
+    # path shares the normal uploader but bypasses search-view filtering.
+    if source_files is not None:
+        for relative in source_files:
+            file_path = local_dir / relative
+            if not file_path.resolve().is_relative_to(local_dir.resolve()):
+                raise ValueError("Source file escapes repository")
+            if any(part == ".git" for part in Path(relative).parts):
+                raise ValueError("Git metadata cannot be a source file")
+            if file_path.is_symlink() or not file_path.is_file():
+                raise ValueError(f"Source file is not a regular file: {relative}")
+            target_uri = safe_join_viking_uri(viking_uri_base, relative)
+            files_to_upload.append((file_path, target_uri))
+            parent_uris.add(target_uri.rsplit("/", 1)[0])
+
+    for root, dirs, files in os.walk(local_dir) if source_files is None else []:
         dir_path = Path(root)
         dir_spec = gitignore_matcher.spec_for_dir(dir_path)
 
@@ -230,7 +246,11 @@ async def upload_directory(
 
             def _read_and_encode() -> bytes:
                 content = file_path.read_bytes()
-                return detect_and_convert_encoding(content, file_path)
+                return (
+                    content
+                    if source_files is not None
+                    else detect_and_convert_encoding(content, file_path)
+                )
 
             try:
                 encoded = await asyncio.to_thread(_read_and_encode)

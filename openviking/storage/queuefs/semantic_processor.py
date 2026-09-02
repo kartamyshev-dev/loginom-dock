@@ -360,8 +360,7 @@ class SemanticProcessor(DequeueHandlerBase):
                     # maintenance. Let the newest message aggregate while this
                     # one still summarizes/vectorizes its changed files.
                     logger.info(
-                        "Downgrading stale semantic message to file-only work: "
-                        "uri=%s version=%s",
+                        "Downgrading stale semantic message to file-only work: uri=%s version=%s",
                         msg.uri,
                         msg.coalesce_version,
                     )
@@ -779,10 +778,7 @@ class SemanticProcessor(DequeueHandlerBase):
         if msg.skip_vectorization:
             logger.info(f"Skipping vectorization for {dir_uri} (requested via SemanticMsg)")
             return
-        if not (
-            wrote_semantics.overview_body_changed
-            or wrote_semantics.abstract_body_changed
-        ):
+        if not (wrote_semantics.overview_body_changed or wrote_semantics.abstract_body_changed):
             logger.info(
                 "Skipping directory vectorization for %s (visible semantics unchanged)",
                 dir_uri,
@@ -867,6 +863,37 @@ class SemanticProcessor(DequeueHandlerBase):
             # sidecar) was moved into the target; rewrite local image paths now.
             await self._rewrite_target_image_uris(root_uri, target_uri, ctx=ctx, lock=lock)
             return diff
+
+        # Raw Git originals are a hidden parser sidecar, outside the semantic
+        # view. Sync their hidden files too, preserving exact bytes on refresh.
+        from openviking.parse.parsers.code.source_snapshot import SOURCE_DIRECTORY, SOURCE_MANIFEST
+
+        source_manifest_uri = f"{root_uri.rstrip('/')}/{SOURCE_MANIFEST}"
+        try:
+            await viking_fs.stat(source_manifest_uri, ctx=ctx)
+        except FileNotFoundError:
+            pass
+        except Exception as exc:
+            from openviking.pyagfs.exceptions import AGFSNotFoundError
+            from openviking_cli.exceptions import NotFoundError
+
+            if not isinstance(exc, (NotFoundError, AGFSNotFoundError)):
+                raise
+        else:
+            await viking_fs.sync_tree(
+                f"{root_uri.rstrip('/')}/{SOURCE_DIRECTORY}",
+                f"{target_uri.rstrip('/')}/{SOURCE_DIRECTORY}",
+                ctx=ctx,
+                lease_ref=lock,
+                include_hidden=True,
+            )
+            manifest = await viking_fs.read_file(source_manifest_uri, ctx=ctx)
+            await viking_fs.write_file(
+                f"{target_uri.rstrip('/')}/{SOURCE_MANIFEST}",
+                manifest,
+                ctx=ctx,
+                lease_ref=lock,
+            )
 
         # sync_tree skips hidden files, so the .image_mappings.json sidecar is
         # still at the temp root. Carry it over and rewrite the synced markdown

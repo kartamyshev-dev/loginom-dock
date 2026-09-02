@@ -101,12 +101,12 @@ const activity = {
       missingPending:
         'Missing authorization id. Open the link your MCP client gave you.',
       requestSummary:
-        '{{clientName}} is requesting access to your OpenViking workspace.',
+        '{{clientName}} is requesting access to your Loginom Dock workspace.',
       redirectLabel: 'Redirect',
       scopesLabel: 'Scopes',
       scopesNone: '(none)',
       signInRequired:
-        'Sign in to OpenViking Studio (Connection & Identity) or paste an API key below to authorize this client.',
+        'Sign in to Loginom Dock (Connection & Identity) or paste an API key below to authorize this client.',
       openConnectionSettings: 'Open Connection & Identity',
       authorize: 'Authorize',
       deny: 'Deny',
@@ -132,7 +132,7 @@ const activity = {
       verifyError: 'Authorization failed: {{message}}',
       noApiKey: 'No API key available. Select an identity or paste a key.',
       signInRequired:
-        'Sign in to OpenViking Studio (Connection & Identity) or paste an API key below to verify.',
+        'Sign in to Loginom Dock (Connection & Identity) or paste an API key below to verify.',
     },
   },
   playground: {
@@ -221,7 +221,7 @@ const activity = {
       opened: 'Resource opened',
       onlineTitle: 'Service online',
       onlineBody:
-        'OpenViking API responded normally; found {{count}} nodes under the root.',
+        'Loginom Dock API responded normally; found {{count}} nodes under the root.',
       lsBody: 'Showing {{count}} nodes under {{uri}}.',
       fileEmpty: 'File is empty; opened in the middle preview.',
       searchUsage: 'Usage: {{name}} <query> [--scope .|viking://resources/...]',

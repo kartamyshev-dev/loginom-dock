@@ -13,6 +13,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# Dock JavaScript runtime is source, not a Python build directory.
+!client/lib/
+!client/lib/**
 # Shared memory-plugin JS source — not a Python build artifact.
 !examples/memory-plugin-shared/lib/
 !examples/opencode-plugin/lib/
@@ -146,7 +149,7 @@ RAGbenchmark/*.log
 # AI Coding
 CLAUDE.md
 *.so
-AGENTS.md
+# Keep the canonical Dock project rules in version control.
 AGENTS.md.local
 
 # Git worktrees
@@ -230,3 +233,11 @@ node_modules/
 
 # Local scratch / working notes
 .scratch/
+
+# Dock secrets and local state
+.env
+.env.*
+.dock/
+.openviking/
+*.state.json
+output/

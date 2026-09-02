@@ -1294,6 +1294,7 @@ class Session:
         if not messages:
             return
         if not self._viking_fs:
+            self._filter_delivered_messages(messages, {message.id for message in self._messages})
             await self._apply_appended_messages_to_state(messages)
             return
 
@@ -1322,6 +1323,24 @@ class Session:
                 # append. Message correctness remains rooted in messages.jsonl.
                 self._meta = in_memory_meta
 
+            # Opt-in delivery identities use the existing durable Message.id.
+            # The commit/append lock also covers archive lookup, so a late retry
+            # cannot re-add a message moved to history by a concurrent commit.
+            if any(message.id.startswith("msg_delivery_") for message in messages):
+                delivered = {message.id for message in self._messages}
+                wanted = {message.id for message in messages} - delivered
+                if wanted:
+                    for archive in await self._list_archive_refs(strict=True):
+                        delivered.update(
+                            message.id
+                            for message in await self._read_archive_messages(archive["archive_uri"])
+                        )
+                        if wanted <= delivered:
+                            break
+                self._filter_delivered_messages(messages, delivered)
+                if not messages:
+                    return
+
             await self._apply_appended_messages_to_state(messages)
             batch_content = "".join(message.to_jsonl() + "\n" for message in messages)
             if live_messages_missing:
@@ -1339,6 +1358,22 @@ class Session:
             await self._save_meta()
         finally:
             await self._viking_fs._async_agfs.pathlock_release(lease)
+
+    @staticmethod
+    def _filter_delivered_messages(messages: List[Message], delivered: set[str]) -> None:
+        delivered_groups = {
+            message_id.rsplit("_", 1)[0]
+            for message_id in delivered
+            if message_id.startswith("msg_delivery_")
+        }
+        remaining = []
+        for message in messages:
+            if message.id.startswith("msg_delivery_"):
+                if message.id in delivered or message.id.rsplit("_", 1)[0] in delivered_groups:
+                    continue
+                delivered.add(message.id)
+            remaining.append(message)
+        messages[:] = remaining
 
     async def _apply_appended_messages_to_state(self, messages: List[Message]) -> None:
         """Update in-memory counters after an authoritative root reload."""
@@ -1381,6 +1416,7 @@ class Session:
                 role, parts, peer_id/created_at and optional semantic fields.
         """
         all_messages = []
+        delivery_keys = set()
         for i, spec in enumerate(messages_spec):
             if "role" not in spec:
                 raise ValueError(f"messages_spec[{i}]: missing required key 'role'")
@@ -1392,6 +1428,20 @@ class Session:
             turn_id = spec.get("turn_id")
             message_kind = spec.get("message_kind")
             source_message_ids = spec.get("source_message_ids")
+            delivery_key = spec.get("deduplication_key")
+            if delivery_key is not None and (
+                not isinstance(delivery_key, str) or not 1 <= len(delivery_key) <= 256
+            ):
+                raise ValueError("deduplication_key must contain 1 to 256 characters")
+            if delivery_key is not None:
+                if delivery_key in delivery_keys:
+                    continue
+                delivery_keys.add(delivery_key)
+
+            def message_id(part_index=0, delivery_key=delivery_key):
+                if delivery_key is not None:
+                    return f"msg_delivery_{sha256_text(delivery_key)}_{part_index}"
+                return f"msg_{uuid4().hex}"
 
             try:
                 peer_id = normalize_peer_id(spec.get("peer_id"))
@@ -1403,7 +1453,7 @@ class Session:
             if self._is_tool_result_aggregate(role, parts):
                 msgs = [
                     Message(
-                        id=f"msg_{uuid4().hex}",
+                        id=message_id(part_index),
                         role=role,
                         parts=[part],
                         peer_id=peer_id,
@@ -1414,13 +1464,13 @@ class Session:
                             list(source_message_ids) if source_message_ids is not None else None
                         ),
                     )
-                    for part in parts
+                    for part_index, part in enumerate(parts)
                 ]
                 self._externalize_large_tool_output_group(msgs)
                 all_messages.extend(msgs)
             else:
                 msg = Message(
-                    id=f"msg_{uuid4().hex}",
+                    id=message_id(),
                     role=role,
                     parts=parts,
                     peer_id=peer_id,
@@ -3042,21 +3092,23 @@ class Session:
         """Get one completed archive by archive ID."""
         from openviking_cli.exceptions import NotFoundError
 
-        for archive in await self._get_completed_archive_refs():
-            if archive["archive_id"] != archive_id:
+        for state in reversed(await self._scan_archive_states()):
+            if state.archive_id != archive_id or state.state != "completed":
                 continue
 
-            overview = await self._read_archive_overview(archive["archive_uri"])
-            if not overview:
+            overview = await self._read_archive_overview(state.archive_uri)
+            if not overview and state.done.get("working_memory_enabled") is not False:
                 break
 
-            abstract = await self._read_archive_abstract(archive["archive_uri"], overview)
+            # A completed commit with Working Memory disabled intentionally has
+            # no summary. Its durable visible messages are still a readable archive.
+            abstract = await self._read_archive_abstract(state.archive_uri, overview)
             return {
                 "archive_id": archive_id,
                 "abstract": abstract,
                 "overview": overview,
                 "messages": [
-                    m.to_dict() for m in await self._read_archive_messages(archive["archive_uri"])
+                    m.to_dict() for m in await self._read_archive_messages(state.archive_uri)
                 ],
             }
 
@@ -3165,14 +3217,16 @@ class Session:
                 continue
         return "pending"
 
-    async def _list_archive_refs(self) -> List[Dict[str, Any]]:
+    async def _list_archive_refs(self, *, strict: bool = False) -> List[Dict[str, Any]]:
         """List archive refs sorted by archive index descending."""
         if not self._viking_fs:
             return []
 
         try:
             history_items = await self._viking_fs.ls(f"{self._session_uri}/history", ctx=self.ctx)
-        except Exception:
+        except Exception as exc:
+            if strict and not _is_storage_not_found(exc):
+                raise
             return []
 
         refs: List[Dict[str, Any]] = []

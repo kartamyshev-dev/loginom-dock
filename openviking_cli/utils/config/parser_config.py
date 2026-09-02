@@ -8,9 +8,9 @@ scattered across different modules. All configurations inherit from ParserConfig
 and can be loaded from ov.conf files.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from openviking_cli.utils.logger import get_logger
 
@@ -258,6 +258,10 @@ class CodeConfig(CodeHostingConfig):
         github_raw_domain: Domain for GitHub raw content (raw.githubusercontent.com)
     """
 
+    # Preserve a byte-exact Git checkout as a hidden sidecar of its search view.
+    # Opt-in so ordinary OpenViking imports retain their existing behavior.
+    preserve_source_files: bool = False
+    source_only_extensions: List[str] = field(default_factory=list)
     extract_functions: bool = True
     extract_classes: bool = True
     extract_imports: bool = True
@@ -296,6 +300,13 @@ class CodeConfig(CodeHostingConfig):
         super().validate()
 
         # Validate code-specific fields
+        if not isinstance(self.preserve_source_files, bool):
+            raise ValueError("preserve_source_files must be a boolean")
+        if not isinstance(self.source_only_extensions, list) or any(
+            not isinstance(ext, str) or not ext.startswith(".") or ext != ext.lower()
+            for ext in self.source_only_extensions
+        ):
+            raise ValueError("source_only_extensions must be lowercase dotted extensions")
         if self.max_line_length <= 0:
             raise ValueError("max_line_length must be positive")
 

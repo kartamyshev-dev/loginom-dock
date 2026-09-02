@@ -55,6 +55,7 @@ import {
 } from '#/hooks/use-app-connection'
 import type { ServerMode } from '#/hooks/use-server-mode'
 import { cn } from '#/lib/utils'
+import { resolvePublicAsset } from '#/lib/public-path'
 import { resolveStudioManagementCapabilities } from '#/lib/studio-permissions'
 
 type NavItem = {
@@ -81,6 +82,13 @@ type NavGroupItemProps = {
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
+  {
+    icon: PlugZapIcon,
+    id: 'connect',
+    section: 'workspace',
+    titleKey: 'navigation.connect.title',
+    to: '/connect',
+  },
   {
     icon: HomeIcon,
     id: 'home',
@@ -277,9 +285,8 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const currentLanguage = resolveLanguage(
     i18n.resolvedLanguage ?? i18n.language,
   )
-  const agentIntegrationsHref = `https://docs.openviking.ai/${
-    currentLanguage === 'zh-CN' ? 'zh' : 'en'
-  }/agent-integrations/01-overview`
+  const agentIntegrationsHref =
+    'https://github.com/kartamyshev-dev/loginom-dock/blob/main/docs/loginom-dock/implementation-status.md'
   const sdkApiHref = `https://docs.openviking.ai/${
     currentLanguage === 'zh-CN' ? 'zh' : 'en'
   }/api/01-overview`
@@ -333,6 +340,23 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
 
         <SidebarContent className="gap-0 py-1">
+          <Link
+            to="/home"
+            aria-label="Loginom Dock"
+            className="flex items-center gap-2 px-3 py-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
+          >
+            <img
+              src={resolvePublicAsset('loginom-dock.svg')}
+              alt=""
+              className="size-7 shrink-0"
+            />
+            <span className="min-w-0 group-data-[collapsible=icon]:hidden">
+              <span className="block text-sm font-semibold">Loginom Dock</span>
+              <span className="block text-[10px] text-muted-foreground">
+                Powered by OpenViking
+              </span>
+            </span>
+          </Link>
           {NAV_SECTIONS.map((section) => (
             <SidebarGroup key={section.id} className="pb-1">
               <SidebarGroupLabel className="h-7 px-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45">
@@ -446,7 +470,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
                   <SidebarMenuButton
                     render={
                       <a
-                        href="https://docs.openviking.ai/"
+                        href="https://github.com/kartamyshev-dev/loginom-dock#readme"
                         target="_blank"
                         rel="noreferrer"
                       />
@@ -548,7 +572,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
             </button>
 
             <a
-              href="https://github.com/volcengine/OpenViking"
+              href="https://github.com/kartamyshev-dev/loginom-dock"
               target="_blank"
               rel="noreferrer"
               aria-label={t('footer.github', { ns: 'appShell' })}

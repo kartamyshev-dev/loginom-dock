@@ -1,5 +1,42 @@
 const workspace = {
   appShell: {
+    connect: {
+      title: 'Connect your agent to Loginom',
+      description:
+        'Use Codex or Hermes to build and run Loginom workflows with shared documentation and a browser on your computer.',
+      choose: 'Choose your agent',
+      codexDescription: 'Install through the Codex plugin catalog',
+      hermesDescription: 'Install into your chosen Hermes profile',
+      stepsTitle: 'Start your first task',
+      requirements:
+        'macOS with Apple silicon or Linux x64 with a desktop, a supported agent, and access to your Loginom instance.',
+      codexStep1:
+        'Download the current release and run its connection wizard. It prepares the Dock runtime and browser.',
+      codexStep2:
+        'Enter your Dock client key and Loginom address in the wizard. Install Loginom Dock through the Codex plugin manager and review its hooks.',
+      codexStep3:
+        'Start a new task, ask Codex to work in Loginom, and sign in to Loginom in the Dock browser if needed.',
+      hermesStep1:
+        'Download the current release and run its connection wizard for your Hermes profile.',
+      hermesStep2:
+        'Enter your Dock client key and Loginom address. The wizard installs the pinned plugin and connection through Hermes.',
+      hermesStep3:
+        'Restart the Hermes gateway if you use it, open a new session, and ask Hermes to work in Loginom. Sign in in the Dock browser if needed.',
+      download: 'Download {{version}}',
+      pending:
+        'The first release is undergoing acceptance checks. Verified downloads will appear here when it is ready.',
+      addressTitle: 'Dock address',
+      addressDescription:
+        'Use this address in the connection wizard. Your client key is entered locally.',
+      copy: 'Copy address',
+      copied: 'Copied',
+      copyFailed: 'Select and copy the address above.',
+      sharedTitle: 'A shared knowledge base',
+      sharedDescription:
+        'Loginom tasks are archived after Dock preparation succeeds. Messages and tool results are cleaned of secrets and shared with other Dock participants.',
+      localDescription:
+        'Browser profiles and binary files stay on your computer. Each task has its own browser profile. Your personal memory provider is preserved.',
+    },
     footer: {
       agentIntegrations: 'Agent Integrations',
       connection: 'Connection Settings',
@@ -26,9 +63,10 @@ const workspace = {
         userId: 'User ID',
         userIdPlaceholder: 'Enter a User ID',
       },
-      defaultTitle: 'OpenViking Studio',
+      defaultTitle: 'Loginom Dock',
     },
     navigation: {
+      connect: { title: 'Connect' },
       home: {
         title: 'Home',
       },
@@ -72,12 +110,12 @@ const workspace = {
       },
       loadingSessions: 'Loading...',
       noSessions: 'No sessions',
-      workspaceGroupLabel: 'OpenViking Studio',
+      workspaceGroupLabel: 'Loginom Dock',
     },
   },
   monitoringPage: {
     title: 'Monitoring',
-    description: 'View real-time health for OpenViking components.',
+    description: 'View real-time health for Loginom Dock components.',
     version: 'v{{version}}',
     refresh: 'Refresh',
     updatedAt: 'Updated at {{time}}',
@@ -149,7 +187,7 @@ const workspace = {
         queue: 'Resource processing, semantic generation, and session queues.',
         vikingdb: 'Vector storage and indexing service.',
         models: 'VLM, embedding, and rerank model services.',
-        filesystem: 'OpenViking filesystem and mount services.',
+        filesystem: 'Loginom Dock filesystem and mount services.',
         lock: 'Transaction locks and concurrency control.',
         retrieval: 'Context retrieval service.',
       },
@@ -197,7 +235,7 @@ const workspace = {
       },
     },
     offline: {
-      title: 'OpenViking is not connected',
+      title: 'Loginom Dock is not connected',
       description:
         'Configure the server URL and credentials to view monitoring data.',
       action: 'Open connection settings',
@@ -217,7 +255,7 @@ const workspace = {
       'Skills in this scope will appear here after they are added.',
     loadFailed: 'Could not load skills',
     networkError:
-      'Could not connect to the OpenViking service. Check the server URL and connection status.',
+      'Could not connect to the Loginom Dock service. Check the server URL and connection status.',
     connectionSettings: 'Open connection settings',
     detail: 'Details',
     openPlayground: 'Open in Playground',
@@ -382,7 +420,7 @@ const workspace = {
     addDialog: {
       title: 'Add scheduled sync',
       description:
-        'Add a remote resource and configure how often OpenViking checks for updates.',
+        'Add a remote resource and configure how often Loginom Dock checks for updates.',
     },
     editDialog: {
       title: 'Edit scheduled sync',
@@ -582,7 +620,7 @@ const workspace = {
             'Regular users should request a User API Key from their Account admin.',
           secondary:
             'Deployment admins can find the Root API Key at server.root_api_key in the server-side ov.conf. Add it here, then create or regenerate a User Key in User Management.',
-          title: 'No OpenViking API Key yet?',
+          title: 'No Loginom Dock API Key yet?',
         },
         learnMore: 'Learn how to get an API Key',
         trusted: {
@@ -605,7 +643,7 @@ const workspace = {
     },
     connectionPage: {
       description:
-        'Configure the OpenViking server connection, control credential, and active data credential.',
+        'Configure the Loginom Dock server connection, control credential, and active data credential.',
       title: 'Connection settings',
     },
     dialogs: {
@@ -685,7 +723,7 @@ const workspace = {
     },
     keyResult: {
       description:
-        'Copy it now. OpenViking may only show a prefix after you leave this state.',
+        'Copy it now. Loginom Dock may only show a prefix after you leave this state.',
       dismiss: 'Dismiss',
       title: 'New API key',
     },
@@ -714,9 +752,9 @@ const workspace = {
     },
     page: {
       adminDescription:
-        'Configure the active OpenViking Studio identity and manage accounts, users, and API keys.',
+        'Configure the active Loginom Dock identity and manage accounts, users, and API keys.',
       description:
-        'Configure the OpenViking Studio server URL and API key, then view data for the current identity.',
+        'Configure the Loginom Dock server URL and API key, then view data for the current identity.',
       title: 'Connection & Identity',
     },
     placeholders: {
@@ -813,7 +851,7 @@ const workspace = {
     page: {
       description:
         'Aligned with the product overview: menu entries, context data volume, today tokens, today retrievals, agent access, token trend, and context commit stats.',
-      eyebrow: 'OpenViking Studio',
+      eyebrow: 'Loginom Dock',
       settings: 'Connection & Settings',
       title: 'Overview',
     },

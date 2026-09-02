@@ -15,6 +15,40 @@ from openviking.parse.parsers.upload_utils import (
 )
 from openviking.utils.path_safety import sanitize_relative_viking_path
 
+
+@pytest.mark.asyncio
+async def test_source_manifest_preserves_bytes_and_only_selected_files(tmp_path, viking_fs):
+    original = "Пример".encode("cp1251")
+    (tmp_path / ".agents").mkdir()
+    (tmp_path / ".agents" / "SKILL.md").write_bytes(original)
+    (tmp_path / "fixture.bin").write_bytes(b"\x00\xff")
+    (tmp_path / "empty.txt").touch()
+    (tmp_path / "untracked.txt").write_text("not selected")
+    large = b"x" * (10 * 1024 * 1024 + 1)
+    (tmp_path / "large.txt").write_bytes(large)
+    selected = [".agents/SKILL.md", "fixture.bin", "empty.txt", "large.txt"]
+    count, warnings = await upload_directory(
+        tmp_path, "viking://temp/repo/.source", viking_fs, source_files=selected,
+    )
+    assert count == 4 and warnings == []
+    assert viking_fs.files["viking://temp/repo/.source/.agents/SKILL.md"] == original
+    assert viking_fs.files["viking://temp/repo/.source/fixture.bin"] == b"\x00\xff"
+    assert viking_fs.files["viking://temp/repo/.source/empty.txt"] == b""
+    assert viking_fs.files["viking://temp/repo/.source/large.txt"] == large
+    assert not any("untracked" in uri for uri in viking_fs.files)
+
+
+@pytest.mark.asyncio
+async def test_source_manifest_rejects_links_and_git_metadata(tmp_path, viking_fs):
+    (tmp_path / "target").write_text("target")
+    (tmp_path / "link").symlink_to(tmp_path / "target")
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".git" / "config").write_text("git metadata")
+    for path in ["link", ".git/config", "../outside"]:
+        with pytest.raises(ValueError):
+            await upload_directory(tmp_path, "viking://temp/repo/.source", viking_fs, source_files=[path])
+    assert viking_fs.files == {}
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

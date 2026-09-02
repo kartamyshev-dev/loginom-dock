@@ -305,3 +305,27 @@ async def test_sync_missing_source_never_touches_target(monkeypatch):
 
     fake_fs.sync_tree.assert_not_awaited()
     fake_fs.rm.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_raw_source_sidecar_refresh_keeps_lease_and_skips_semantic_diff(monkeypatch):
+    fake_fs = _SyncWrapperVikingFS(target_exists=True)
+    fake_fs.stat = AsyncMock(return_value={"size": 2})
+    fake_fs.sync_tree = AsyncMock(return_value=SyncDiff())
+    fake_fs.write_file = AsyncMock()
+    monkeypatch.setattr(
+        "openviking.storage.queuefs.semantic_processor.get_viking_fs", lambda: fake_fs
+    )
+    monkeypatch.setattr(
+        "openviking.storage.queuefs.semantic_processor.rewrite_image_uris", AsyncMock()
+    )
+    lease = {"lease_ref": "test-lease"}
+    await SemanticProcessor()._sync_topdown_recursive(
+        "viking://temp/import", "viking://resources/root", lock=lease
+    )
+    raw_call = fake_fs.sync_tree.await_args_list[1]
+    assert raw_call.args == ("viking://temp/import/.source", "viking://resources/root/.source")
+    assert raw_call.kwargs["include_hidden"] is True
+    assert raw_call.kwargs["lease_ref"] is lease
+    assert fake_fs.write_file.await_args.args[0] == "viking://resources/root/.source-manifest.json"
+    assert fake_fs.deleted_temp == ["viking://temp/import"]

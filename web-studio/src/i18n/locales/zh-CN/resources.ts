@@ -180,7 +180,7 @@ const resources = {
     feishu: {
       auth: {
         title: '访问方式',
-        hint: '选择 OpenViking 访问该飞书资源时使用的身份。',
+        hint: '选择 Loginom Dock 访问该飞书资源时使用的身份。',
         app: '服务端应用凭证',
         appHint: '使用服务端配置的 FEISHU_APP_ID 和 FEISHU_APP_SECRET。',
         user: '用户授权',
@@ -197,7 +197,7 @@ const resources = {
         credentials: '在飞书开放平台获取应用的 App ID 和 App Secret。',
         server:
           '在服务端设置 FEISHU_APP_ID、FEISHU_APP_SECRET，或写入 ov.conf 的 feishu.app_id、feishu.app_secret。',
-        restart: '重启 OpenViking 服务，使配置生效；无需额外开启开关。',
+        restart: '重启 Loginom Dock 服务，使配置生效；无需额外开启开关。',
       },
     },
     git: {
@@ -260,7 +260,7 @@ const resources = {
         endpoints:
           '在 ov.conf 中设置 connector.enable=true；connector.connector 填写完整的 doc/add 接口 URL，connector.tracker 填写完整的 task/info 接口 URL。',
         allow: '将 tos 加入 connector.allowed_add_types。',
-        restart: '重启 OpenViking 服务后，再使用 tos://bucket/path 导入。',
+        restart: '重启 Loginom Dock 服务后，再使用 tos://bucket/path 导入。',
         noDocumentation:
           'Connector 服务地址由部署方提供，Studio 不会自动填写；当前暂无独立的 TOS Connector 部署文档。',
       },
@@ -551,7 +551,7 @@ const resources = {
       title: '检索失败',
       fallback: '请求未能完成，请稍后重试。',
       network:
-        '请求未能到达 OpenViking 服务，请检查连接地址、服务状态或跨域配置。',
+        '请求未能到达 Loginom Dock 服务，请检查连接地址、服务状态或跨域配置。',
       code: '错误码',
       status: 'HTTP 状态',
       requestId: '请求 ID',

@@ -30,3 +30,34 @@ class TestTemplateUtils:
         rendered = TemplateUtils.render("plain text", {"unused": "value"})
 
         assert rendered == "plain text"
+
+    def test_dock_event_sources_refer_to_original_messages_after_chunking(self):
+        from pathlib import Path
+
+        import yaml
+
+        from openviking.message import Message
+        from openviking.message.part import TextPart
+        from openviking.session.memory.memory_updater import ExtractContext
+
+        root = Path(__file__).resolve().parents[3]
+        template = yaml.safe_load(
+            (root / 'deploy/loginom-dock/memory-templates/events.yaml').read_text()
+        )
+        messages = [
+            Message(id='request-identity', role='user', parts=[TextPart('Import requested. ' * 30)]),
+            Message(id='result-identity', role='assistant', parts=[TextPart('Import blocked. ' * 30)]),
+        ]
+        context = ExtractContext(messages)
+        assert len(context.messages) > len(messages)
+        rendered = TemplateUtils.render(
+            template['content_template'],
+            {'summary': 'Import was blocked.', 'ranges': f'0-{len(context.messages) - 1}'},
+            context,
+        )
+        source_ids = rendered.split('# Source message IDs', 1)[1]
+        assert '`request-identity` (user)' in source_ids
+        assert '`result-identity` (assistant)' in source_ids
+        assert '#chunk_' not in source_ids
+        empty = TemplateUtils.render(template['content_template'], {'summary': '', 'ranges': ''}, context)
+        assert 'request-identity' not in empty and 'result-identity' not in empty

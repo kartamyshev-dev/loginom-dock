@@ -1,5 +1,38 @@
 const workspace = {
   appShell: {
+    connect: {
+      title: '将智能体连接到 Loginom',
+      description:
+        '使用 Codex 或 Hermes，借助共享文档和本机浏览器创建并运行 Loginom 工作流。',
+      choose: '选择智能体',
+      codexDescription: '通过 Codex 插件目录安装',
+      hermesDescription: '安装到所选 Hermes 配置',
+      stepsTitle: '开始第一个任务',
+      requirements:
+        '需要 Apple 芯片的 macOS 或带桌面的 Linux x64、受支持的智能体，以及 Loginom 网络访问权限。',
+      codexStep1: '下载当前版本并运行连接向导，准备 Dock 运行环境和浏览器。',
+      codexStep2:
+        '在向导中输入 Dock 客户端密钥和 Loginom 地址，通过 Codex 插件管理器安装 Loginom Dock，并检查其钩子。',
+      codexStep3:
+        '新建任务并让 Codex 操作 Loginom；如有需要，在 Dock 浏览器中登录。',
+      hermesStep1: '下载当前版本，为所选 Hermes 配置运行连接向导。',
+      hermesStep2:
+        '输入 Dock 客户端密钥和 Loginom 地址，向导将通过 Hermes 安装固定版本的插件和连接。',
+      hermesStep3:
+        '如使用 Hermes 网关，请重启网关，然后新建会话并让 Hermes 操作 Loginom。如有需要，在 Dock 浏览器中登录。',
+      download: '下载 {{version}}',
+      pending: '首个版本正在进行验收测试。通过验证的下载将在准备就绪后显示。',
+      addressTitle: 'Dock 地址',
+      addressDescription: '在连接向导中使用此地址。客户端密钥仅在本机输入。',
+      copy: '复制地址',
+      copied: '已复制',
+      copyFailed: '请选择并复制上方地址。',
+      sharedTitle: '共享知识库',
+      sharedDescription:
+        'Dock 准备成功后，Loginom 任务将被归档。消息和工具结果经敏感信息清理后与其他 Dock 参与者共享。',
+      localDescription:
+        '浏览器配置和二进制文件保留在本机。每个任务使用独立的浏览器配置，个人记忆提供方保持不变。',
+    },
     footer: {
       agentIntegrations: 'Agent 接入',
       connection: '连接设置',
@@ -26,9 +59,10 @@ const workspace = {
         userId: '用户 ID',
         userIdPlaceholder: '输入用户 ID',
       },
-      defaultTitle: 'OpenViking Studio',
+      defaultTitle: 'Loginom Dock',
     },
     navigation: {
+      connect: { title: '连接' },
       home: {
         title: '首页',
       },
@@ -72,12 +106,12 @@ const workspace = {
       },
       loadingSessions: '加载中...',
       noSessions: '暂无会话',
-      workspaceGroupLabel: 'OpenViking Studio',
+      workspaceGroupLabel: 'Loginom Dock',
     },
   },
   monitoringPage: {
     title: '监控',
-    description: '查看 OpenViking 各组件的实时健康状态。',
+    description: '查看 Loginom Dock 各组件的实时健康状态。',
     version: 'v{{version}}',
     refresh: '刷新',
     updatedAt: '更新于 {{time}}',
@@ -149,7 +183,7 @@ const workspace = {
         queue: '资源处理、语义生成和会话提交队列。',
         vikingdb: '向量数据存储与索引服务。',
         models: 'VLM、Embedding 和 Rerank 模型服务。',
-        filesystem: 'OpenViking 文件系统与挂载点。',
+        filesystem: 'Loginom Dock 文件系统与挂载点。',
         lock: '事务锁与并发控制服务。',
         retrieval: '上下文检索服务。',
       },
@@ -197,7 +231,7 @@ const workspace = {
       },
     },
     offline: {
-      title: '尚未连接 OpenViking 服务',
+      title: '尚未连接 Loginom Dock 服务',
       description: '配置服务地址和访问凭证后即可查看监控数据。',
       action: '打开连接设置',
     },
@@ -212,7 +246,7 @@ const workspace = {
     emptyScope: '暂无{{scope}}',
     emptyScopeDescription: '添加对应作用域的技能后，会在这里展示。',
     loadFailed: '技能加载失败',
-    networkError: '无法连接 OpenViking 服务，请检查服务地址和连接状态。',
+    networkError: '无法连接 Loginom Dock 服务，请检查服务地址和连接状态。',
     connectionSettings: '打开连接设置',
     detail: '详情',
     openPlayground: '在工作台中打开',
@@ -367,7 +401,7 @@ const workspace = {
     },
     addDialog: {
       title: '添加定时同步',
-      description: '添加远程资源，并设置 OpenViking 检查更新的周期。',
+      description: '添加远程资源，并设置 Loginom Dock 检查更新的周期。',
     },
     editDialog: {
       title: '编辑定时同步',
@@ -557,7 +591,7 @@ const workspace = {
           primary: '普通用户：请向当前账号管理员索取用户 API 密钥。',
           secondary:
             '部署管理员：Root API 密钥位于服务端 ov.conf 的 server.root_api_key；填入后可在“用户管理”中创建或重新生成用户密钥。',
-          title: '还没有 OpenViking API 密钥？',
+          title: '还没有 Loginom Dock API 密钥？',
         },
         learnMore: '查看 API 密钥获取方式',
         trusted: {
@@ -579,7 +613,7 @@ const workspace = {
       userHint: '供工作台和租户数据 API 使用。',
     },
     connectionPage: {
-      description: '配置 OpenViking 服务连接、控制面凭证和当前数据访问凭证。',
+      description: '配置 Loginom Dock 服务连接、控制面凭证和当前数据访问凭证。',
       title: '连接设置',
     },
     dialogs: {
@@ -657,7 +691,7 @@ const workspace = {
     },
     keyResult: {
       description:
-        '请现在复制保存。离开当前状态后，OpenViking 可能只展示前缀。',
+        '请现在复制保存。离开当前状态后，Loginom Dock 可能只展示前缀。',
       dismiss: '收起',
       title: '新的 API 密钥',
     },
@@ -682,9 +716,9 @@ const workspace = {
     },
     page: {
       adminDescription:
-        '配置当前 OpenViking Studio 身份，并管理账号、用户和 API 密钥。',
+        '配置当前 Loginom Dock 身份，并管理账号、用户和 API 密钥。',
       description:
-        '配置当前 OpenViking Studio 的服务地址和 API 密钥，查看当前身份下的数据。',
+        '配置当前 Loginom Dock 的服务地址和 API 密钥，查看当前身份下的数据。',
       title: '连接设置',
     },
     placeholders: {
@@ -780,7 +814,7 @@ const workspace = {
     page: {
       description:
         '汇总上下文数据、今日检索、Token 用量和上下文提交等运行数据。',
-      eyebrow: 'OpenViking Studio',
+      eyebrow: 'Loginom Dock',
       settings: '连接与设置',
       title: '概览',
     },

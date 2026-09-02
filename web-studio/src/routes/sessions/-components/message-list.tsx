@@ -17,7 +17,7 @@ import {
   ToolCallBlock,
 } from './message-parts'
 
-const OPENVIKING_ICON_SRC = resolvePublicAsset('favicon-32.png')
+const PRODUCT_ICON_SRC = resolvePublicAsset('loginom-dock.svg')
 
 // ---------------------------------------------------------------------------
 // CopyButton
@@ -113,7 +113,7 @@ function BotAvatar({ compact }: { compact?: boolean }) {
     <div
       className={`flex ${sizeClass} shrink-0 items-center justify-center rounded-full ring-1 ring-border/20 overflow-hidden`}
     >
-      <img src={OPENVIKING_ICON_SRC} alt="OpenViking" className={sizeClass} />
+      <img src={PRODUCT_ICON_SRC} alt="Loginom Dock" className={sizeClass} />
     </div>
   )
 }

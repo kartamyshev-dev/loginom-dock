@@ -403,8 +403,8 @@ def create_app(
             await usage_reporter.close()
 
     app = FastAPI(
-        title="OpenViking API",
-        description="OpenViking HTTP Server - Agent-native context database",
+        title="Loginom Dock API",
+        description="Loginom Dock — knowledge and agent integration, powered by OpenViking",
         version="0.1.0",
         lifespan=lifespan,
     )
