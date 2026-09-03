@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { createRedactor } from './redact.mjs';
 import { acquireClipboard } from './clipboard.mjs';
+import { privatePath, protectWindowsDirectory } from './platform.mjs';
 import { sendSessionMessages } from '../../examples/memory-plugin-shared/lib/batch-send.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -14,12 +15,13 @@ const archivePolicy = { self: { enabled: true }, peer: { enabled: false },
 export async function openArchive(config, { knownSecrets = [], deliveryPort = 46420 } = {}) {
   const root = join(config.stateDir, 'archive');
   await mkdir(root, { recursive: true, mode: 0o700 });
+  protectWindowsDirectory(root);
   const info = await lstat(root);
-  if (!info.isDirectory() || (info.mode & 0o077)) throw new Error('Unsafe Dock archive directory');
+  if (!info.isDirectory() || !privatePath(info)) throw new Error('Unsafe Dock archive directory');
   const file = join(root, 'queue.sqlite');
   try {
     const stat = await lstat(file);
-    if (!stat.isFile() || (stat.mode & 0o077)) throw new Error('Unsafe Dock queue');
+    if (!stat.isFile() || !privatePath(stat)) throw new Error('Unsafe Dock queue');
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const db = new DatabaseSync(file);
   await chmod(file, 0o600);

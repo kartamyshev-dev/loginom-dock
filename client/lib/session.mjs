@@ -3,7 +3,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { executableExists } from './platform.mjs';
+import { executableExists, privateDirectory } from './platform.mjs';
 
 const require = createRequire(import.meta.url);
 const packagePath = (name) => require.resolve(`${name}/package.json`);
@@ -20,7 +20,8 @@ export async function createSession(config, { headless = false } = {}) {
   const directory = join(config.stateDir, 'sessions', id);
   const profile = join(directory, 'browser-profile');
   const artifacts = join(directory, 'artifacts');
-  for (const path of [config.stateDir, directory, profile, artifacts]) {
+  await privateDirectory(config.stateDir);
+  for (const path of [directory, profile, artifacts]) {
     await mkdir(path, { recursive: true, mode: 0o700 });
   }
   const browserRoot = join(config.stateDir, 'runtime', 'browsers');

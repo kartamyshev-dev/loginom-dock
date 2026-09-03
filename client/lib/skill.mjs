@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, writeFile, readFile, lstat, readdir, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { privatePath, protectWindowsDirectory } from './platform.mjs';
 
 export const skillUri = 'viking://agent/skills/loginom-automation';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -107,7 +108,7 @@ export function skillTransport(config, fetcher = fetch) {
 
 async function verifyCache(directory, detail) {
   const root = await lstat(directory);
-  if (!root.isDirectory() || (root.mode & 0o077)) throw new Error('Unsafe Dock skill cache');
+  if (!root.isDirectory() || !privatePath(root)) throw new Error('Unsafe Dock skill cache');
   const actual = [];
   async function walk(path, prefix = '') {
     for (const name of await readdir(path)) {
@@ -125,7 +126,7 @@ async function verifyCache(directory, detail) {
   for (const file of detail.files) {
     const path = join(directory, file.path);
     const entry = await lstat(path);
-    if ((entry.mode & 0o077) || (file.is_dir ? !entry.isDirectory() : !entry.isFile())) {
+    if (!privatePath(entry) || (file.is_dir ? !entry.isDirectory() : !entry.isFile())) {
       throw new Error('Unsafe Dock skill cache entry');
     }
     if (!file.is_dir && (entry.size !== file.size || hash(await readFile(path)) !== file.sha256)) {
@@ -142,6 +143,7 @@ export function createSkillLoader({ directory, transport }) {
     const detail = validateManifest(await transport.manifest());
     const staging = join(directory, `.skill-${randomUUID()}`);
     await mkdir(staging, { mode: 0o700 });
+    protectWindowsDirectory(staging);
     try {
       for (const file of detail.files) {
         if (file.is_dir) await mkdir(join(staging, file.path), { recursive: true, mode: 0o700 });

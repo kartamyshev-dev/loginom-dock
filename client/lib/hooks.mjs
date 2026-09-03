@@ -3,6 +3,7 @@ import { join, isAbsolute } from 'node:path';
 import { createHash } from 'node:crypto';
 import { openArchive } from './archive.mjs';
 import { codexHistory, hermesHistory, hermesLineage, unwrapHermesResult } from './history.mjs';
+import { privatePath } from './platform.mjs';
 
 const digest = value => createHash('sha256').update(String(value)).digest('hex');
 const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(value);
@@ -56,7 +57,7 @@ export async function handleHook(config, input, { knownSecrets = [] } = {}) {
     if (prepared) {
       const directory = join(config.stateDir, 'sessions', prepared.sessionId);
       const stat = await lstat(directory);
-      if (!stat.isDirectory() || (stat.mode & 0o077)) throw new Error('Invalid Dock preparation origin');
+      if (!stat.isDirectory() || !privatePath(stat)) throw new Error('Invalid Dock preparation origin');
       const metadata = JSON.parse(await readFile(join(directory, 'session.json'), 'utf8'));
       if (metadata.agent !== agent || metadata.sessionId !== prepared.sessionId
           || metadata.skillRevision !== prepared.skillRevision || metadata.adapterRevision !== config.adapterRevision) {
