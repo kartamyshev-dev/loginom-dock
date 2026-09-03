@@ -1,8 +1,9 @@
 # Подготовка выпуска Loginom Dock
 
-Клиентский кандидат: `0.1.0-rc.1`. Сборки выполняются на сервере Dock для
+Предварительный [выпуск `0.1.0-rc.1`](https://github.com/kartamyshev-dev/loginom-dock/releases/tag/loginom-dock%400.1.0-rc.1)
+опубликован 3 сентября 2026 года. Сборки выполняются на сервере Dock для
 `darwin-arm64` и `linux-x64`. Публикация выполняется в GitHub Releases проекта
-`kartamyshev-dev/loginom-dock`; до неё ссылки загрузки в Studio остаются пустыми.
+`kartamyshev-dev/loginom-dock`; ссылки загрузки в Studio указываются после публикации.
 Тег клиентского выпуска — `loginom-dock@0.1.0-rc.1`: существующие upstream workflows
 используют `v*` для Python-пакета OpenViking и отдельные префиксы для компонентов.
 Файлы CI для выпуска клиента Dock не меняются.
