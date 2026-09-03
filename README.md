@@ -13,11 +13,10 @@ Dock сохраняет ресурсы, skills, поиск, память, сес
 Задачи в Loginom выполняет подключённый агент с локальным браузером. Репозитории
 `ai-skills`, `e2e-tests` и `loginom-help` составляют общую базу знаний Dock.
 
-Опубликован предварительный [выпуск клиента 0.1.0-rc.1](https://github.com/kartamyshev-dev/loginom-dock/releases/tag/loginom-dock%400.1.0-rc.1)
-для macOS Apple Silicon и Linux x64. Инструкция на русском языке, выбор агента,
+Опубликован предварительный [выпуск клиента 0.1.0-rc.2](https://github.com/kartamyshev-dev/loginom-dock/releases/tag/loginom-dock%400.1.0-rc.2)
+для macOS Apple Silicon, Linux x64 и Windows 11 x64. Инструкция на русском языке, выбор агента,
 ссылки на архивы и примеры задач доступны на [лендинге](https://loginom-dock.duckdns.org/).
-Полные сценарии в Codex и Hermes проверены. Приёмка чистой установки из релиза,
-включая обновление, откат и удаление, остаётся отложенной пользователем.
+Полные сценарии в Codex и Hermes проверены.
 
 ## Сборка
 

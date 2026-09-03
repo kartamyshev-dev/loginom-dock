@@ -231,9 +231,6 @@ docker exec loginom-dock-openviking-1 ov add-resource \
 loopback-портами, без переключения production. Команды, текущие пути и ограничения —
 в [operations.md](operations.md) и [deploy README](../../deploy/loginom-dock/README.md).
 
-Автоматическая отправка во внешнее хранилище и чистая приёмка опубликованного
-клиента отложены пользователем. Наличие локальной копии не закрывает эти задачи.
-
 ## Studio
 
 Сборку выполнять на VPS; команды ниже относятся к каталогу серверного checkout.

@@ -65,9 +65,6 @@
 - Keep the public landing (`loginom-dock.duckdns.org`) separate from the existing
   API/MCP/Studio origin (`loginom.duckdns.org`). For a new client release, update
   `landing/release.json` after verifying the published artifacts.
-- Clean installation of the published release on macOS/Linux (including update,
-  rollback and uninstall) and automated offsite backups are explicitly deferred.
-  Do not resume them as an implicit prerequisite of an unrelated task.
 - Extend the existing suites for behavior changes. Branding changes need build
   and visual checks; avoid tests that only repeat display strings.
 - Use real Loginom for drag, clipboard, execution and package-saving acceptance.
