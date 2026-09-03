@@ -66,7 +66,7 @@ def main():
     if windows:
         (target / "install.ps1").write_text(
             "$ErrorActionPreference = 'Stop'\r\n"
-            "$dockBundle = Split-Path -LiteralPath $MyInvocation.MyCommand.Path -Parent\r\n"
+            "$dockBundle = $PSScriptRoot\r\n"
             "& (Join-Path $dockBundle 'runtime\\node.exe') (Join-Path $dockBundle 'client\\bin\\setup.mjs') --bundle $dockBundle @args\r\n"
             "exit $LASTEXITCODE\r\n"
         )
