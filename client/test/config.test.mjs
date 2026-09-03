@@ -21,9 +21,11 @@ test('restricts credential files, endpoint and identity before connecting', asyn
   const options = { ...actor, configPath: path, stateDir: join(directory, 'state') };
   await writeFile(path, JSON.stringify(valid), { mode: 0o600 });
   assert.equal((await loadConfig(options)).apiKey, 'test-only');
-  await chmod(path, 0o644);
-  await assert.rejects(loadConfig(options), /private/);
-  await chmod(path, 0o600);
+  if (process.platform !== 'win32') {
+    await chmod(path, 0o644);
+    await assert.rejects(loadConfig(options), /private/);
+    await chmod(path, 0o600);
+  }
   await symlink(path, join(directory, 'link.json'));
   await assert.rejects(loadConfig({ ...options, configPath: join(directory, 'link.json') }), /regular file/);
   for (const endpoint of ['http://dock.example/mcp', 'https://user:secret@dock.example/mcp', 'https://dock.example/mcp?key=x']) {

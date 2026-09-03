@@ -30,7 +30,6 @@ test('redaction removes known credentials, fields, URLs, private keys, binaries 
 
 test('only activated sessions enqueue sanitized events; activation and delivery identity survive reopening', async t => {
   const stateDir = await mkdtemp(join(tmpdir(), 'dock-archive-'));
-  t.after(() => rm(stateDir, { recursive: true, force: true }));
   const config = { stateDir, apiKey: 'queue-control-secret', endpoint: 'https://dock.example/mcp' };
   const event = { agent: 'codex', conversation: 'chat-1', turn: 'turn-1', event: 'message-1', role: 'user', parts: [{ type: 'text', text: 'Task queue-control-secret' }] };
   let q = await openArchive(config);
@@ -41,7 +40,7 @@ test('only activated sessions enqueue sanitized events; activation and delivery 
   assert.ok(!JSON.stringify(q.pending()).includes(config.apiKey));
   const id = q.pending()[0].deduplication_key;
   q.close(); q = await openArchive(config);
-  t.after(() => q.close());
+  t.after(async () => { q.close(); await rm(stateDir, { recursive: true, force: true }); });
   assert.equal(q.active('codex', 'chat-1').server_session, activation.server_session);
   q.enqueue(event);
   assert.equal(q.pending()[0].deduplication_key, id);
@@ -51,9 +50,9 @@ test('only activated sessions enqueue sanitized events; activation and delivery 
 
 test('uncertain acknowledgement retries the same delivery identity and never uses personal queues', async t => {
   const stateDir = await mkdtemp(join(tmpdir(), 'dock-retry-'));
-  t.after(() => rm(stateDir, { recursive: true, force: true }));
   const config = { stateDir, apiKey: 'wire-control-secret', endpoint: 'https://dock.example/mcp' };
-  const q = await openArchive(config, { deliveryPort: 0 }); t.after(() => q.close());
+  const q = await openArchive(config, { deliveryPort: 0 });
+  t.after(async () => { q.close(); await rm(stateDir, { recursive: true, force: true }); });
   const event = { agent: 'hermes', conversation: 'chat-2', turn: 'turn-2', event: 'call-1', role: 'assistant', createdAt: new Date(Date.now() - 60000).toISOString(), parts: [{ type: 'text', text: 'Useful wire-control-secret' }] };
   q.activate({ ...event, metadata: {} }); q.enqueue(event);
   q.requestCommit(event.agent, event.conversation);
