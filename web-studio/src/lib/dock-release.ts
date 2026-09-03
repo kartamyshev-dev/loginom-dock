@@ -3,4 +3,7 @@
 export const dockRelease: {
   version: string | null
   url: string | null
-} = { version: null, url: null }
+} = {
+  version: '0.1.0-rc.1',
+  url: 'https://github.com/kartamyshev-dev/loginom-dock/releases/tag/loginom-dock%400.1.0-rc.1',
+}
