@@ -306,8 +306,8 @@ skill, а не к каждой задаче через Dock.
 | --- | --- |
 | `~/.loginom-dock/config.json` | Активные endpoint, обычный клиентский ключ, Loginom URL; 0600 |
 | `~/.loginom-dock/bin/` | Launchers, которые разрешают текущую установленную среду |
-| `~/.loginom-dock/releases/`, `current`, `previous` | Проверенные среды, активная и предыдущая версии |
-| `~/.loginom-dock/current/runtime/node` | Закреплённый Node для установленного клиента |
+| `~/.loginom-dock/releases/`, `current`, `previous` | Проверенные среды, активная и предыдущая версии; на Windows `current`/`previous` — pointer-файлы |
+| `~/.loginom-dock/current/runtime/node` | Закреплённый Node; на Windows путь разрешается через pointer и оканчивается `runtime\\node.exe` |
 | `~/.loginom-dock/runtime/browsers/` | Управляемый Chromium |
 | `~/.loginom-dock/sessions/<id>/session.json` | Реальные pins, пути, признак archive activation |
 | `~/.loginom-dock/sessions/<id>/browser-profile/`, `artifacts/` | Изолированный браузер и результаты этой сессии |

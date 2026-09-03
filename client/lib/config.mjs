@@ -2,6 +2,7 @@ import { readFile, lstat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { normalizeConfigPath } from '../../examples/memory-plugin-shared/lib/mcp-proxy-config.mjs';
+import { privatePath } from './platform.mjs';
 
 export async function loadConfig({ configPath, stateDir, agent, adapterRevision }) {
   if (!configPath) throw new Error('An explicit Dock config path is required');
@@ -10,8 +11,8 @@ export async function loadConfig({ configPath, stateDir, agent, adapterRevision 
   }
   const path = normalizeConfigPath(configPath);
   const info = await lstat(path);
-  if (!info.isFile() || (info.mode & 0o077)) {
-    throw new Error('Dock credentials must be a regular file with mode 0600');
+  if (!info.isFile() || !privatePath(info)) {
+    throw new Error('Dock credentials must be a private regular file');
   }
   const data = JSON.parse(await readFile(path, 'utf8'));
   const endpoint = new URL(data.endpoint);

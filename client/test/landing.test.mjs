@@ -14,8 +14,13 @@ test('landing selection keeps the downloaded archive, extraction and checksum in
       const download = new URL(info.url);
       assert.equal(download.origin, new URL(release.repository).origin);
       assert.equal(download.pathname.split('/').at(-1), info.filename);
-      assert.equal(info.install.split('\n')[0].slice('tar -xzf '.length), info.filename);
-      assert.equal(info.checksum.split(' ').at(-1), info.filename);
+      if (platform === 'win32-x64') {
+        assert.match(info.install, /Expand-Archive/);
+        assert.match(info.checksum, /Get-FileHash/);
+      } else {
+        assert.equal(info.install.split('\n')[0].slice('tar -xzf '.length), info.filename);
+        assert.equal(info.checksum.split(' ').at(-1), info.filename);
+      }
       assert.equal(info.sha256, release.platforms[platform].sha256);
       assert.ok(info.filename.includes(platform));
       for (const action of ['install', 'update', 'rollback', 'uninstall']) {
@@ -32,4 +37,14 @@ test('landing selection keeps the downloaded archive, extraction and checksum in
 test('landing does not silently offer an unrelated platform or agent', () => {
   assert.throws(() => installation(release, 'codex', 'win32-x64'));
   assert.throws(() => installation(release, 'unknown', 'darwin-arm64'));
+});
+
+test('Windows instructions keep zip, PowerShell and selected agent in one flow', () => {
+  const candidate = structuredClone(release);
+  candidate.platforms['win32-x64'] = { sha256: 'a'.repeat(64), bytes: 1024 };
+  const info = installation(candidate, 'hermes', 'win32-x64');
+  assert.match(info.filename, /win32-x64\.zip$/);
+  assert.match(info.install, /install\.ps1 --agent hermes/);
+  assert.match(info.update, /USERPROFILE/);
+  assert.match(info.rollback, /--agent hermes --rollback/);
 });

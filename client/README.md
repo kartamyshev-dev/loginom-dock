@@ -5,7 +5,7 @@
 Расположение активной среды, очереди и pins конкретной сессии:
 [operations.md](../docs/loginom-dock/operations.md).
 
-Общий MCP-компонент для macOS/Linux. Он обслуживает initialization,
+Общий MCP-компонент для Windows/macOS/Linux. Он обслуживает initialization,
 подключает удалённый Dock и локальный Playwright MCP, объединяет их настоящие
 каталоги tools, отвергает коллизии и сохраняет каталог/версии на сессию.
 Для каждого запуска создаётся отдельный профиль браузера в каталоге Dock.
@@ -24,7 +24,7 @@ Node.js закреплён в `.node-version` (24.19.0). Системный Node
 ```sh
 node bin/install-browser.mjs --state-dir /absolute/dock-state
 node bin/loginom-dock.mjs --config /absolute/dock-client.json \
-  --state-dir /absolute/dock-state --agent codex --adapter-revision 0.1.0-rc.1
+  --state-dir /absolute/dock-state --agent codex --adapter-revision 0.1.0-rc.2
 ```
 
 `client.json` — обычный клиентский ключ сервера с полями `endpoint`, `api_key`,
@@ -61,9 +61,11 @@ Native hooks используют собственную SQLite-очередь �
 
 `deploy/loginom-dock/build-client-bundle.py` собирает самостоятельный пакет с Node,
 лицензиями, зависимостями, native-плагинами и SHA-256 каждого файла. `install.sh`
-запускает мастер; ключ вводится скрыто либо читается из явного файла 0600 через
+запускает мастер на macOS/Linux, `install.ps1` — на Windows; ключ вводится скрыто
+либо читается из явного приватного файла через
 `--config-from`. `--runtime-only` предназначен для приёмки среды до native-установки.
-Версии размещаются в `releases/`; `current` переключается атомарно, `--rollback`
+Версии размещаются в `releases/`; `current` переключается атомарно (ссылкой на
+macOS/Linux и защищённым pointer-файлом на Windows), `--rollback`
 возвращает предыдущую среду в режиме `--runtime-only`. Для штатной установки
 `--agent codex --rollback` или `--agent hermes --rollback` восстанавливает также
 native-регистрацию выбранного профиля. Мастер сохраняет журнал перед переключением;

@@ -10,11 +10,15 @@ function updateSelection() {
   document.querySelectorAll('[data-platform]').forEach(el => { el.hidden = el.dataset.platform !== platform; });
   document.querySelectorAll('[data-agent-name]').forEach(el => { el.textContent = agent === 'codex' ? 'Codex' : 'Hermes'; });
   byId('download-link').href = info.url;
-  byId('download-label').textContent = `Скачать для ${platform === 'darwin-arm64' ? 'macOS' : 'Linux'}`;
+  const platformName = { 'darwin-arm64': 'macOS', 'linux-x64': 'Linux', 'win32-x64': 'Windows' }[platform];
+  byId('download-label').textContent = `Скачать для ${platformName}`;
   byId('download-size').textContent = info.size;
   for (const [id, value] of Object.entries({ 'install-command': info.install, 'checksum-command': info.checksum,
     'checksum-value': info.sha256, 'update-command': info.update, 'rollback-command': info.rollback, 'uninstall-command': info.uninstall })) byId(id).textContent = value;
 }
+document.querySelectorAll('input[name="platform"]').forEach(el => {
+  if (!release.platforms[el.value]) { el.disabled = true; el.closest('label').hidden = true; }
+});
 document.querySelectorAll('input[name="agent"], input[name="platform"]').forEach(el => el.addEventListener('change', updateSelection));
 updateSelection();
 

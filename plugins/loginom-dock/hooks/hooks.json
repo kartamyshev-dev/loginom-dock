@@ -5,7 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.1",
+            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.2",
+            "commandWindows": "cmd.exe /d /s /c \"\"${PLUGIN_ROOT}\\scripts\\launch.cmd\" hook codex 0.1.0-rc.2\"",
             "timeout": 10
           }
         ]
@@ -16,7 +17,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.1",
+            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.2",
+            "commandWindows": "cmd.exe /d /s /c \"\"${PLUGIN_ROOT}\\scripts\\launch.cmd\" hook codex 0.1.0-rc.2\"",
             "timeout": 10
           }
         ]
@@ -27,7 +29,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.1",
+            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.2",
+            "commandWindows": "cmd.exe /d /s /c \"\"${PLUGIN_ROOT}\\scripts\\launch.cmd\" hook codex 0.1.0-rc.2\"",
             "timeout": 15
           }
         ]
@@ -38,7 +41,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.1",
+            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.2",
+            "commandWindows": "cmd.exe /d /s /c \"\"${PLUGIN_ROOT}\\scripts\\launch.cmd\" hook codex 0.1.0-rc.2\"",
             "timeout": 15
           }
         ]
@@ -49,7 +53,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.1",
+            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.2",
+            "commandWindows": "cmd.exe /d /s /c \"\"${PLUGIN_ROOT}\\scripts\\launch.cmd\" hook codex 0.1.0-rc.2\"",
             "timeout": 15
           }
         ]
@@ -60,7 +65,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.1",
+            "command": "sh \"${PLUGIN_ROOT}/scripts/launch.sh\" hook codex 0.1.0-rc.2",
+            "commandWindows": "cmd.exe /d /s /c \"\"${PLUGIN_ROOT}\\scripts\\launch.cmd\" hook codex 0.1.0-rc.2\"",
             "timeout": 3
           }
         ]

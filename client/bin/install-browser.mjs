@@ -26,7 +26,9 @@ else {
     await browser.close();
     console.log('Браузер Dock загружен и проверен запуском.');
   } catch {
-    console.error('Браузер загружен, но не запускается. В Linux проверьте системные библиотеки Chromium: используйте install-deps chromium у Playwright из этого комплекта.');
+    console.error(process.platform === 'linux'
+      ? 'Браузер загружен, но не запускается. Проверьте системные библиотеки Chromium: используйте install-deps chromium у Playwright из этого комплекта.'
+      : 'Браузер Dock загружен, но не запускается. Проверьте защиту приложений и доступ к графической сессии.');
     process.exitCode = 1;
   }
 }

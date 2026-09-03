@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { createInterface } from 'node:readline/promises';
-import { readFile, writeFile, mkdir, rename, lstat, rm, readlink } from 'node:fs/promises';
+import { readFile, writeFile, rename, lstat, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -10,6 +10,7 @@ import { installBundle, rollbackBundle, verifyBundle, restoreRuntime } from '../
 import { nativeSnapshot, validateNativeInstall, registerNative, restoreNative, unregisterNative } from '../lib/native.mjs';
 import { loadConfig } from '../lib/config.mjs';
 import { agentVersionSupported, supportedAgents, diagnoseConnection } from '../lib/diagnostics.mjs';
+import { privateDirectory, privatePath, readRuntimePointer } from '../lib/platform.mjs';
 
 process.umask(0o077);
 let stage = 'проверка параметров';
@@ -82,7 +83,7 @@ try {
       if (record.state !== 'installed' || !record.previousRelease) throw new Error('No completed installation with a previous release');
       await verifyBundle(join(root, record.previousRelease), { checkNode: false });
       const currentNative = await nativeSnapshot(values.agent, nativeEnv);
-      const currentRelease = await readlink(join(root, 'current'));
+      const currentRelease = await readRuntimePointer(root);
       try {
         await restoreRuntime(root, record.previousRelease);
         await restoreNative({ agent: values.agent, env: nativeEnv, before: record.before });
@@ -117,7 +118,7 @@ try {
   let data;
   if (values['config-from']) {
     const info = await lstat(resolve(values['config-from']));
-    if (!info.isFile() || (info.mode & 0o077)) throw new Error('Credential source must be a regular 0600 file');
+    if (!info.isFile() || !privatePath(info)) throw new Error('Credential source must be a private regular file');
     data = JSON.parse(await readFile(resolve(values['config-from']), 'utf8'));
   } else {
     const prompts = createInterface({ input: process.stdin, output: process.stdout });
@@ -130,9 +131,9 @@ try {
   if (values['loginom-url']) data.loginom_url = values['loginom-url'];
   const loginom = new URL(data.loginom_url);
   if (!['http:', 'https:'].includes(loginom.protocol) || loginom.username || loginom.password || loginom.searchParams.get('testable') !== 'true') throw new Error('Loginom must have a credential-free HTTP(S) address with testable=true');
-  await mkdir(root, { recursive: true, mode: 0o700 });
+  await privateDirectory(root);
   const rootInfo = await lstat(root);
-  if (!rootInfo.isDirectory() || (rootInfo.mode & 0o077)) throw new Error('Dock root must have mode 0700');
+  if (!rootInfo.isDirectory() || !privatePath(rootInfo)) throw new Error('Dock root must be a private directory');
   stage = 'проверка ключа и соединения с Dock';
   temporary = join(root, '.config-' + randomUUID() + '.json');
   await writeFile(temporary, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 });
@@ -148,7 +149,7 @@ try {
   stage = 'подготовка браузера';
   run(process.execPath, [join(bundle, 'client/bin/install-browser.mjs'), '--state-dir', root]);
   // Prepare the browser and authenticate before changing the active release.
-  const previousRelease = await readlink(join(root, 'current')).catch(error => { if (error.code !== 'ENOENT') throw error; return null; });
+  const previousRelease = await readRuntimePointer(root);
   const previousConfig = await readFile(join(root, 'config.json')).catch(error => { if (error.code !== 'ENOENT') throw error; return null; });
   const oldRecord = await readFile(recordFile).catch(error => { if (error.code !== 'ENOENT') throw error; return null; });
   recovery = { root, before, nativeEnv, agent: values.agent, previousRelease, previousConfig, recordFile, oldRecord, nativeStarted: false };

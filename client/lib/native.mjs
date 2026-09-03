@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
+import { launcherPath } from './platform.mjs';
 
 export function nativeCommand(command, args, env, { capture = false, allowMissing = false } = {}) {
   const result = spawnSync(command, args, { env, encoding: 'utf8', stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit' });
@@ -74,7 +75,7 @@ export async function registerNative({ agent, destination, root, manifest, env, 
     run('hermes', ['plugins', 'install', source, '--ref', manifest.sourceCommit, '--enable', '--force'], env);
     // Hermes' native config command edits only this key and preserves other settings.
     // Unlike interactive mcp add, cancellation cannot silently return success here.
-    const mcp = { command: join(root, 'bin/loginom-dock'), args: ['mcp', 'hermes', manifest.adapterRevision], connect_timeout: 120, enabled: true };
+    const mcp = { command: launcherPath(root), args: ['mcp', 'hermes', manifest.adapterRevision], connect_timeout: 120, enabled: true };
     run('hermes', ['config', 'set', mcpKey, JSON.stringify(mcp)], env);
     const actual = json('hermes', ['config', 'get', mcpKey, '--json'], env, run);
     if (!isDeepStrictEqual(actual, mcp)) throw new Error('Hermes MCP registration was not saved');

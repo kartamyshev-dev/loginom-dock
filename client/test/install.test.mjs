@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { installBundle, rollbackBundle, verifyBundle } from '../lib/install.mjs';
+import { readRuntimePointer } from '../lib/platform.mjs';
 
 test('immutable releases update and roll back without changing credentials or unrelated files; tampering never activates', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'dock-install-'));
@@ -32,4 +33,26 @@ test('immutable releases update and roll back without changing credentials or un
   assert.equal(await readlink(join(home, 'current')), 'releases/' + a.manifest.id);
   await symlink('/etc/passwd', join(first, 'outside'));
   await assert.rejects(() => verifyBundle(first), /Unexpected/);
+});
+
+test('Windows releases use atomic pointer files and a cmd launcher without symlink privileges', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'dock-install-win-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const home = join(directory, 'home');
+  async function bundle(version) {
+    const path = join(directory, version); await mkdir(path);
+    await writeFile(join(path, 'payload'), version);
+    await writeFile(join(path, 'release.json'), JSON.stringify({ version, node: process.versions.node,
+      platform: 'win32-x64', files: [{ path: 'payload', sha256: createHash('sha256').update(version).digest('hex') }] }));
+    return path;
+  }
+  const first = await installBundle(await bundle('1.0.0'), home, { platform: 'win32', arch: 'x64' });
+  const second = await installBundle(await bundle('2.0.0'), home, { platform: 'win32', arch: 'x64' });
+  assert.equal(await readRuntimePointer(home, 'current', 'win32'), 'releases/' + second.manifest.id);
+  assert.equal(await readRuntimePointer(home, 'previous', 'win32'), 'releases/' + first.manifest.id);
+  const launcher = await readFile(join(home, 'bin/loginom-dock.cmd'), 'utf8');
+  assert.match(launcher, /runtime\\node\.exe/);
+  assert.match(launcher, /dock_release:\/=\\/);
+  assert.equal(await rollbackBundle(home, { platform: 'win32', arch: 'x64' }), 'releases/' + first.manifest.id);
+  assert.equal(await readRuntimePointer(home, 'current', 'win32'), 'releases/' + first.manifest.id);
 });

@@ -10,7 +10,7 @@ Loginom Dock даёт агенту инструкции и общую базу �
 - Установленный Codex версии 0.149.1 или новее либо Hermes версии 0.21.0 или новее
   в поддерживаемой основной ветке. Команда выбранного агента должна быть доступна
   в терминале.
-- macOS с Apple Silicon или Linux x64 с графическим окружением.
+- Windows 11 x64, macOS с Apple Silicon или Linux x64 с графическим окружением.
 - Клиентский ключ Dock от администратора и адрес вашего Loginom с `?testable=true`.
 - Доступ к серверу Dock, GitHub и целевому Loginom. Для внутреннего стенда нужен VPN.
 
@@ -22,8 +22,9 @@ Loginom Dock даёт агенту инструкции и общую базу �
 Откройте [страницу установки Loginom Dock](https://loginom-dock.duckdns.org/#install)
 и перейдите к указанному там релизу.
 Скачайте архив для своей системы и файл `SHA256SUMS`. macOS соответствует
-`darwin-arm64`, Linux — `linux-x64`. Сравните контрольную сумму архива с записью
-в `SHA256SUMS`: на macOS используйте `shasum -a 256`, на Linux — `sha256sum`.
+`darwin-arm64`, Linux — `linux-x64`, Windows — `win32-x64`. Сравните контрольную
+сумму архива с записью в `SHA256SUMS`: на macOS используйте `shasum -a 256`,
+на Linux — `sha256sum`, на Windows — `Get-FileHash -Algorithm SHA256` в PowerShell.
 
 Распакуйте архив, откройте терминал в каталоге `loginom-dock` и запустите мастер
 для своего агента:
@@ -47,6 +48,16 @@ Loginom Dock даёт агенту инструкции и общую базу �
 и проверит подключение. Системные Node.js/Python и чужие настройки агента сохраняются.
 На минимальном Linux мастер может сообщить об отсутствующих библиотеках Chromium;
 их устанавливает администратор системы. Подробности — в `client/README.md`.
+
+На Windows распакуйте ZIP и из каталога `loginom-dock` выполните в PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 --agent codex
+```
+
+Параметры `--agent hermes`, `--config-from`, `--rollback`, `--uninstall` и
+`--hermes-home` совпадают с примерами выше. Среда устанавливается в
+`%USERPROFILE%\.loginom-dock`; системные Node.js и Python не заменяются.
 
 Для Codex проверьте разрешения обработчиков Dock в `/hooks`, если агент запрашивает
 доверие. Для Hermes при работающем gateway перезапустите его после установки.

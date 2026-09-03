@@ -2,7 +2,8 @@
 
 Предварительный [выпуск `0.1.0-rc.1`](https://github.com/kartamyshev-dev/loginom-dock/releases/tag/loginom-dock%400.1.0-rc.1)
 опубликован 3 сентября 2026 года. Сборки выполняются на сервере Dock для
-`darwin-arm64` и `linux-x64`. Публикация выполняется в GitHub Releases проекта
+`darwin-arm64` и `linux-x64`. Следующий кандидат добавляет `win32-x64` в ZIP.
+Публикация выполняется в GitHub Releases проекта
 `kartamyshev-dev/loginom-dock`; публичные ссылки загрузки на лендинге указываются
 после проверки опубликованных файлов. Studio перенаправляет на лендинг.
 Тег клиентского выпуска — `loginom-dock@0.1.0-rc.1`: существующие upstream workflows
@@ -16,7 +17,7 @@
 ## Состав
 
 Каждый архив содержит Node.js 24.19.0, закреплённые зависимости браузера/MCP,
-оба native-плагина, мастер `install.sh`, `client/INSTALL.md`, лицензии и
+оба native-плагина, мастер `install.sh` либо `install.ps1`, `client/INSTALL.md`, лицензии и
 `release.json`. В manifest входят версия, исходный commit, признак чистоты
 исходников, совместимость с агентами и контрольные суммы файлов.
 
@@ -39,7 +40,7 @@
 1. Зафиксировать исходники и проверить чистоту Git. Создать клиентский снимок
    через `deploy/loginom-dock/package-client-source.py`; сверить его содержимое
    с деревом указанного commit и SHA-256 после передачи на сервер.
-2. На сервере собрать оба архива через `build-client-bundle.py`, используя
+2. На сервере собрать все платформенные архивы через `build-client-bundle.py`, используя
    закреплённые Node и зависимости. Проверить manifest и комплект клиентских
    тестов на Linux и macOS. Собирать на Mac повторно не требуется.
 3. Сверить native-приёмку Codex и Hermes с фактическими отчётами, скриншотами
@@ -54,7 +55,7 @@
 6. Только после подтверждённой публикации обновить `landing/release.json`: `version`,
    `tag`, полный `sourceCommit`, размеры и SHA-256 обоих архивов. Собрать лендинг
    через `Dockerfile.landing` на сервере, развернуть Caddy и проверить инструкции
-   всех четырёх сочетаний агента/системы. `web-studio/src/lib/dock-release.ts`
+   всех сочетаний агента/системы. `web-studio/src/lib/dock-release.ts`
    больше не управляет загрузками; ради новой ссылки Studio пересобирать не нужно.
    Записать фактические хеши и результаты в журнал.
 
@@ -69,10 +70,10 @@ python3 deploy/loginom-dock/package-client-source.py \
 
 Это небольшой клиентский архив, не полный серверный снимок. На VPS после распаковки
 использовать `build-client-bundle.py --source <каталог-исходников> --node <бинарник-Node>
---node-license <LICENSE> --dependencies <node_modules> --platform darwin-arm64|linux-x64
+--node-license <LICENSE> --dependencies <node_modules> --platform darwin-arm64|linux-x64|win32-x64
 --output <новый-каталог-комплекта> --source-commit <полный-SHA> --source-clean`.
 Бинарник Node выбирается для целевой платформы, зависимости — из закреплённого lock.
-Каталог output должен отсутствовать; в tar.gz верхний каталог будет `loginom-dock`.
+Каталог output должен отсутствовать; в tar.gz или Windows ZIP верхний каталог будет `loginom-dock`.
 `--source-clean` не проверяет Git автоматически: оператор обязан сверить снимок.
 Проверенные входные файлы прежнего выпуска находятся в серверном `client-build/`;
 их версии и суммы перепроверяются перед повторным использованием.

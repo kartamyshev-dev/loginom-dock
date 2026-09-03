@@ -1,9 +1,9 @@
-import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { executableExists } from './platform.mjs';
 
 const require = createRequire(import.meta.url);
 const packagePath = (name) => require.resolve(`${name}/package.json`);
@@ -12,7 +12,7 @@ const json = async (path) => JSON.parse(await readFile(path, 'utf8'));
 export async function createSession(config, { headless = false } = {}) {
   const expectedNode = (await readFile(new URL('../.node-version', import.meta.url), 'utf8')).trim();
   if (process.versions.node !== expectedNode) throw new Error(`Dock requires Node.js ${expectedNode}`);
-  if (!['darwin', 'linux'].includes(process.platform)) throw new Error('Dock supports macOS and Linux');
+  if (!['darwin', 'linux', 'win32'].includes(process.platform)) throw new Error('Dock supports macOS, Linux and Windows');
   if (!headless && process.platform === 'linux' && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) {
     throw new Error('A visible Dock browser requires a graphical session');
   }
@@ -27,7 +27,7 @@ export async function createSession(config, { headless = false } = {}) {
   process.env.PLAYWRIGHT_BROWSERS_PATH = browserRoot;
   const { chromium } = await import('playwright-core');
   const executablePath = chromium.executablePath();
-  await access(executablePath, constants.X_OK);
+  await executableExists(executablePath);
   const mcp = await json(packagePath('@playwright/mcp'));
   // SDK's wildcard export resolves package.json inside dist/cjs, without version.
   const sdk = await json(join(dirname(packagePath('@modelcontextprotocol/sdk')), '..', '..', 'package.json'));

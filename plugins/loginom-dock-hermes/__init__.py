@@ -5,7 +5,7 @@ import os
 import subprocess
 from pathlib import Path
 
-ADAPTER_REVISION = "0.1.0-rc.1"
+ADAPTER_REVISION = "0.1.0-rc.2"
 
 
 def register(ctx):
@@ -25,7 +25,7 @@ def register(ctx):
 
     def forward(event, **kwargs):
         dock_root = Path(os.environ.get("LOGINOM_DOCK_HOME", str(Path.home() / ".loginom-dock")))
-        launcher = dock_root / "bin/loginom-dock"
+        launcher = dock_root / ("bin/loginom-dock.cmd" if os.name == "nt" else "bin/loginom-dock")
         if not launcher.is_file():
             return
         # No environment, model prompt, reasoning or binary content is forwarded.

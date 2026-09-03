@@ -35,6 +35,8 @@ def main():
         "LICENSE",
         "README_UPSTREAM.md",
         "deploy/loginom-dock/build-client-bundle.py",
+        "landing/instructions.mjs",
+        "landing/release.json",
     }
     known = (
         subprocess.check_output(

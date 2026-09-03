@@ -13,8 +13,8 @@ if (!/^[0-9A-Za-z.+-]+$/.test(release.version)
 release.url = `${release.repository}/releases/tag/${encodeURIComponent(release.tag)}`;
 release.downloadBase = `${release.repository}/releases/download/${encodeURIComponent(release.tag)}`;
 for (const [platform, entry] of Object.entries(release.platforms)) {
-  if (!['darwin-arm64', 'linux-x64'].includes(platform) || !/^[a-f0-9]{64}$/.test(entry.sha256)) throw new Error('Invalid platform metadata');
-  entry.filename = `loginom-dock-${release.version}-${platform}.tar.gz`;
+  if (!['darwin-arm64', 'linux-x64', 'win32-x64'].includes(platform) || !/^[a-f0-9]{64}$/.test(entry.sha256)) throw new Error('Invalid platform metadata');
+  entry.filename = `loginom-dock-${release.version}-${platform}.${platform === 'win32-x64' ? 'zip' : 'tar.gz'}`;
   entry.url = `${release.downloadBase}/${entry.filename}`;
 }
 const tokens = {
