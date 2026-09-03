@@ -2,6 +2,11 @@
 
 ## Project contract
 
+- Start here: `docs/loginom-dock/agent-handoff.md` (reading order, code map,
+  user decisions, known follow-up work).
+- Production paths, access, build/deploy/rollback and current inventory:
+  `docs/loginom-dock/operations.md`. Verify live state before server changes;
+  repository HEAD, deployed server and installed client may have different revisions.
 - Canonical plan: `docs/plans/2026-09-02-loginom-dock-implementation-plan.md`.
 - Architecture: `docs/loginom-dock/architecture.md`.
 - OpenViking project URI: `viking://resources/loginom-dock`.
@@ -54,6 +59,15 @@
 
 ## Verification and delivery
 
+- Build production artifacts on the Dock VPS, as requested by the user. Local
+  source checks and preview of server-built assets are allowed. Documentation-only
+  changes do not require a server rebuild or a client reinstall.
+- Keep the public landing (`loginom-dock.duckdns.org`) separate from the existing
+  API/MCP/Studio origin (`loginom.duckdns.org`). For a new client release, update
+  `landing/release.json` after verifying the published artifacts.
+- Clean installation of the published release on macOS/Linux (including update,
+  rollback and uninstall) and automated offsite backups are explicitly deferred.
+  Do not resume them as an implicit prerequisite of an unrelated task.
 - Extend the existing suites for behavior changes. Branding changes need build
   and visual checks; avoid tests that only repeat display strings.
 - Use real Loginom for drag, clipboard, execution and package-saving acceptance.

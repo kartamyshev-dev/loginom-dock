@@ -22,7 +22,7 @@ Dock собирается из этого checkout. Compose использует
 в отдельном конфиге Dock. Персональное хранилище OpenViking не мигрирует.
 
 Git-источники `ai-skills`, `e2e-tests`, `loginom-help` импортируются через OpenViking
-Assets и `add_resource`. Планируемые стабильные URI:
+Assets и `add_resource`. Стабильные URI:
 
 | Источник | URI |
 | --- | --- |
@@ -30,7 +30,7 @@ Assets и `add_resource`. Планируемые стабильные URI:
 | e2e-tests | `viking://resources/loginom-dock/sources/e2e-tests` |
 | loginom-help | `viking://resources/loginom-dock/sources/loginom-help` |
 
-Первый импорт должен проверить реальные контрольные файлы, LFS hydration,
+При импорте проверяются реальные контрольные файлы, LFS hydration,
 изображения и fixtures. Штатные фильтры parser не гарантируют полноту: пропуски
 фиксируются отдельно, необходимые файлы сохраняются через существующие службы.
 Бинарный файл в хранилище не означает семантический разбор его содержимого.

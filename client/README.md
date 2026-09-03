@@ -1,8 +1,11 @@
 # Локальный клиент Loginom Dock
 
 Установка, обновление и восстановление для пользователей: [INSTALL.md](INSTALL.md).
+Карта кода и ограничения: [памятка агенту](../docs/loginom-dock/agent-handoff.md).
+Расположение активной среды, очереди и pins конкретной сессии:
+[operations.md](../docs/loginom-dock/operations.md).
 
-Разрабатываемый общий MCP-компонент для macOS/Linux. Он обслуживает initialization,
+Общий MCP-компонент для macOS/Linux. Он обслуживает initialization,
 подключает удалённый Dock и локальный Playwright MCP, объединяет их настоящие
 каталоги tools, отвергает коллизии и сохраняет каталог/версии на сессию.
 Для каждого запуска создаётся отдельный профиль браузера в каталоге Dock.
@@ -12,7 +15,8 @@
 
 Зависимости фиксируются `package-lock.json`: MCP SDK 1.30.0, Playwright MCP 0.0.80.
 Последний использует Playwright `1.63.0-alpha-2026-08-31` и Chromium revision 1243
-(153.0.8010.12). Это комплект прототипа, его пригодность проверяется на живом Loginom.
+(153.0.8010.12). Комплект прошёл сценарии на живом Loginom; чистая установка опубликованного
+релиза отдельно отложена пользователем.
 Node.js закреплён в `.node-version` (24.19.0). Системный Node не заменяется.
 
 Используйте закреплённый Node и `npm ci --ignore-scripts`, затем:
@@ -20,7 +24,7 @@ Node.js закреплён в `.node-version` (24.19.0). Системный Node
 ```sh
 node bin/install-browser.mjs --state-dir /absolute/dock-state
 node bin/loginom-dock.mjs --config /absolute/dock-client.json \
-  --state-dir /absolute/dock-state --agent codex --adapter-revision prototype-1
+  --state-dir /absolute/dock-state --agent codex --adapter-revision 0.1.0-rc.1
 ```
 
 `client.json` — обычный клиентский ключ сервера с полями `endpoint`, `api_key`,
@@ -84,7 +88,7 @@ MCP-запись меняется штатным `hermes config set mcp_servers.
 возраст самого старого неотправленного события. Отсутствующее время обозначается
 как неизвестное. HTTP-доступность страницы не означает успешную авторизацию.
 Пакеты с `sourceDirty=true` являются кандидатами и не подходят для закреплённой
-публичной установки Hermes. Полная приёмка установки ещё продолжается.
+публичной установки Hermes. Проверка чистой установки опубликованного релиза отложена пользователем.
 
 Проверки: `npm test`; сквозная проверка подключает SDK-клиент к этому stdio-серверу,
 читает настоящий каталог и вызывает поиск/чтение Dock и инструменты браузера.

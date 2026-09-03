@@ -1,5 +1,9 @@
 # Сервер Dock и источники
 
+[Действующая установка, доступ, пути и порядок развёртывания](../../docs/loginom-dock/operations.md).
+Ниже описаны скрипты; их наличие в checkout не означает, что серверная копия
+в `/opt/loginom-dock/tools` уже обновлена.
+
 - `install-docker.sh` — bootstrap для чистого Ubuntu; требует разрешения на
   установку системных пакетов от root. [Порядок сборки](../../docs/loginom-dock/development.md).
 - `compose.server.yaml` и `Caddyfile.server` — серверный конфиг, Ollama и публичный HTTPS.
