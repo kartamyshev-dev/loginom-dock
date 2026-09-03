@@ -4,7 +4,12 @@ import { createHash, randomUUID } from 'node:crypto';
 import { isWindows, launcherPath, privateDirectory, readRuntimePointer, replaceRuntimePointer } from './platform.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const safePath = value => typeof value === 'string' && !value.startsWith('/') && value.split('/').every(part => part && part !== '.' && part !== '..') && !/[\\\x00-\x1f]/.test(value);
+const safePath = value => typeof value === 'string' && !value.startsWith('/') && value.split('/').every(part => part && part !== '.' && part !== '..') && !/[\\:\x00-\x1f]/.test(value);
+const runtimeTarget = (value, platform) => {
+  const normalized = isWindows(platform) && typeof value === 'string' ? value.replaceAll('\\', '/') : value;
+  return safePath(normalized) && /^releases\/[0-9A-Za-z.+-]+$/.test(normalized) ? normalized : null;
+};
+const runtimePath = (root, target) => join(root, ...target.split('/'));
 export async function verifyBundle(bundle, { checkNode = true, platform = process.platform, arch = process.arch } = {}) {
   const raw = await readFile(join(bundle, 'release.json'));
   const manifest = JSON.parse(raw);
@@ -66,8 +71,9 @@ export async function installBundle(bundle, root, { platform = process.platform,
 
 export async function rollbackBundle(root, { platform = process.platform, arch = process.arch } = {}) {
   const previous = await readRuntimePointer(root, 'previous', platform);
-  if (!safePath(previous) || !previous.startsWith('releases/')) throw new Error('Invalid Dock rollback target');
-  await verifyBundle(join(root, previous), { platform, arch });
+  const target = runtimeTarget(previous, platform);
+  if (!target) throw new Error('Invalid Dock rollback target');
+  await verifyBundle(runtimePath(root, target), { platform, arch });
   const current = await readRuntimePointer(root, 'current', platform);
   await replaceRuntimePointer(root, 'current', previous, platform);
   await replaceRuntimePointer(root, 'previous', current, platform);
@@ -76,7 +82,8 @@ export async function rollbackBundle(root, { platform = process.platform, arch =
 
 export async function restoreRuntime(root, target, { platform = process.platform, arch = process.arch } = {}) {
   if (target === null) { await rm(join(root, 'current'), { force: true }); return; }
-  if (!safePath(target) || !/^releases\/[0-9A-Za-z.+-]+$/.test(target)) throw new Error('Invalid Dock recovery target');
-  await verifyBundle(join(root, target), { checkNode: false, platform, arch });
+  const normalized = runtimeTarget(target, platform);
+  if (!normalized) throw new Error('Invalid Dock recovery target');
+  await verifyBundle(runtimePath(root, normalized), { checkNode: false, platform, arch });
   await replaceRuntimePointer(root, 'current', target, platform);
 }
