@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm, symlink, readlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
 import { installBundle } from '../lib/install.mjs';
 import { pinnedHook } from '../lib/hook-runtime.mjs';
 import { openArchive } from '../lib/archive.mjs';
+import { readRuntimePointer } from '../lib/platform.mjs';
 
 test('an activated conversation keeps its hook runtime across updates; new prepare chooses its own runtime and tampering fails closed', async t => {
   const temp = await mkdtemp(join(tmpdir(), 'dock-hook-runtime-'));
@@ -33,7 +34,7 @@ test('an activated conversation keeps its hook runtime across updates; new prepa
   const selected = await pinnedHook(config, input, latest.destination);
   assert.equal(selected.root, old.destination);
   assert.equal(selected.adapterRevision, '0.1.0');
-  assert.equal(await readlink(join(stateDir, 'current')), 'releases/' + latest.manifest.id);
+  assert.equal(await readRuntimePointer(stateDir), join('releases', latest.manifest.id));
   assert.equal(await pinnedHook(config, input, old.destination), null);
   assert.equal(await pinnedHook(config, { session_id: 'unrelated' }, latest.destination), null);
 
