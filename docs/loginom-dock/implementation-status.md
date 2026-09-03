@@ -768,12 +768,12 @@ Windows дополнительно исправлена и проверена с
 `landing/instructions.mjs` и `landing/release.json` входят в bundle, поэтому тесты
 лендинга выполняются из изолированного комплекта.
 
-После проверки GitHub assets лендинг собран на VPS из commit
-`43c6a1476a81878b34d24fe68509347e71256701` и опубликован отдельным образом
-`loginom-dock:landing-43c6a147`, image ID
-`sha256:bf4ba4d35fa82aae1814da057fad34932de30f71023e8bbdcc3dd9fd9984ce10`.
+После проверки GitHub assets актуальный лендинг собран на VPS из commit
+`92ddefd5d699345d1bdb3f588ca74c9b09485561` и опубликован отдельным образом
+`loginom-dock:landing-92ddefd5`, image ID
+`sha256:1a524691d902dcd836f9560885bd5bf3c37730e45f6de3157e6459aa75dd2ff3`.
 Снимок сервера имеет SHA-256
-`edb472531d046800459bc2e04e34409505d3b92b0e45661da489cb07940ca7e7`.
+`d760cbf0b6facebfa61234a6a21056ab8a0ff8ff2256f95f0b5ae8294c4fa958`.
 API и Studio не пересобирались. После переключения прошли readiness основного
 домена, аутентификация, роль user, 15 серверных MCP tools, 302 старого маршрута,
 404 `/mcp` на домене лендинга и загрузка Windows ZIP. В браузере проверены выбор
