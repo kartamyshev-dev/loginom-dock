@@ -31,6 +31,16 @@
   adapters over forks of existing subsystems; never add a second repository importer.
 - Keep Dock config, credentials, queues and browser profiles in Dock-owned paths.
   Never fall back to a user's personal OpenViking configuration or memory provider.
+- Use only models specified in the Loginom Dock configuration for this project,
+  including tests, native acceptance checks and diagnostics, except for the
+  explicitly authorized Hermes scenario workflow below. Do not substitute
+  other models to work around failures, timeouts or limits, or change the configured
+  models without an explicit user instruction.
+- For creating Loginom scenarios through Hermes, including scenario acceptance
+  tests, use the ChatGPT subscription already connected to Hermes on this machine
+  (confirmed by the user on 2026-09-03). Use that existing Hermes connection;
+  do not replace it with the Dock OpenRouter key or the server's model. This
+  exception does not change the configured models for Dock server functions.
 - Codex/Hermes run the task and local browser. The Dock server supplies knowledge;
   it does not become the Loginom task executor.
 - Activate archive capture only after successful `dock_prepare`, from its triggering

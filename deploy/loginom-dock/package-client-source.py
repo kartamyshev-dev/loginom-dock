@@ -30,6 +30,7 @@ def main():
         "client/package-lock.json",
         "client/.node-version",
         "client/README.md",
+        "client/INSTALL.md",
         ".agents/plugins/marketplace.json",
         "LICENSE",
         "README_UPSTREAM.md",

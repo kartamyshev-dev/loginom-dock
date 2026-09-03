@@ -1,6 +1,6 @@
 {
   "name": "@loginom-dock/client",
-  "version": "0.1.0-dev.0",
+  "version": "0.1.0-rc.1",
   "private": true,
   "type": "module",
   "description": "Loginom Dock local MCP bridge",
