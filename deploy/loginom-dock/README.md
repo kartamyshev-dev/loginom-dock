@@ -3,6 +3,9 @@
 - `install-docker.sh` — bootstrap для чистого Ubuntu; требует разрешения на
   установку системных пакетов от root. [Порядок сборки](../../docs/loginom-dock/development.md).
 - `compose.server.yaml` и `Caddyfile.server` — серверный конфиг, Ollama и публичный HTTPS.
+- `Dockerfile.landing` — серверная сборка отдельного русскоязычного лендинга в
+  закреплённый образ Caddy. Сайт работает на `loginom-dock.duckdns.org`, API/MCP
+  остаются на `loginom.duckdns.org`. [Исходники и порядок обновления](../../landing/README.md).
 - `bootstrap-account.py` — общий аккаунт и обычный клиентский ключ; существующие
   ключи не меняет. У технического администратора отключено извлечение памяти.
 - `verify-server.py` — живая проверка HTTPS, readiness, прав клиента и каталога MCP.
