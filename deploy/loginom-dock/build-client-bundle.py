@@ -108,7 +108,9 @@ def main():
     (target / "release.json").write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
     archive = Path(str(target) + (".zip" if windows else ".tar.gz"))
     if windows:
-        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zipped:
+        with zipfile.ZipFile(
+            archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9, strict_timestamps=False
+        ) as zipped:
             for path in sorted(target.rglob("*")):
                 if path.is_file():
                     zipped.write(path, Path("loginom-dock") / path.relative_to(target))
