@@ -5,17 +5,19 @@
 
 Знания Loginom и инструменты для Codex и Hermes на основе OpenViking.
 
-[План](docs/plans/2026-09-02-loginom-dock-implementation-plan.md) · [Архитектура](docs/loginom-dock/architecture.md) · [Разработка](docs/loginom-dock/development.md) · [Статус](docs/loginom-dock/implementation-status.md)
+[Установка и первые шаги](https://loginom-dock.duckdns.org/) · [План](docs/plans/2026-09-02-loginom-dock-implementation-plan.md) · [Архитектура](docs/loginom-dock/architecture.md) · [Разработка](docs/loginom-dock/development.md) · [Статус](docs/loginom-dock/implementation-status.md)
 
 </div>
 
 Dock сохраняет ресурсы, skills, поиск, память, сессии, API, MCP и Studio OpenViking.
 Задачи в Loginom выполняет подключённый агент с локальным браузером. Репозитории
-`ai-skills`, `e2e-tests` и `loginom-help` должны стать общей базой знаний Dock.
+`ai-skills`, `e2e-tests` и `loginom-help` составляют общую базу знаний Dock.
 
-Проект находится в разработке. Базовый интерфейс и сервер получают брендирование;
-единый клиентский MCP, native-плагины, импорт источников и общий очищенный архив
-проходят отдельные этапы реализации. Готовых клиентских релизов пока нет.
+Опубликован предварительный [выпуск клиента 0.1.0-rc.1](https://github.com/kartamyshev-dev/loginom-dock/releases/tag/loginom-dock%400.1.0-rc.1)
+для macOS Apple Silicon и Linux x64. Инструкция на русском языке, выбор агента,
+ссылки на архивы и примеры задач доступны на [лендинге](https://loginom-dock.duckdns.org/).
+Полные сценарии в Codex и Hermes проверены. Приёмка чистой установки из релиза,
+включая обновление, откат и удаление, остаётся отложенной пользователем.
 
 ## Сборка
 
@@ -29,7 +31,9 @@ docker compose build
 Порядок первичной настройки отдельного конфига и запуска описан в
 [руководстве разработчика](docs/loginom-dock/development.md). Сервер по умолчанию
 публикуется только на `127.0.0.1:1933`, Studio — `/studio/`, MCP — `/mcp`.
-Публичное развёртывание с HTTPS и общим аккаунтом проверяется отдельно.
+Действующий сервер с HTTPS — `https://loginom.duckdns.org`, отдельный лендинг —
+`https://loginom-dock.duckdns.org`. Его исходники и серверная сборка описаны
+в [landing/README.md](landing/README.md).
 
 ## Совместимость и происхождение
 
