@@ -86,16 +86,16 @@ Credentials имеют права 0600, их каталоги — 0700. Ориг
 
 ### Снимок работающей установки
 
-Текущий релиз — `/opt/loginom-dock/releases/20260904-landing-8b14da6f`, исходный
-commit `8b14da6f40f75befd537c8b4d48e705ffdfeb0f9`.
+Текущий релиз — `/opt/loginom-dock/releases/20260904-landing-03019de7`, исходный
+commit `03019de70e45bd769dd6ecea0d408dee440e4b0d`.
 SHA-256 `source.tar.gz`:
-`cfb7fc954f64bae119079781d52ec4661705935d59fa3201396af9f9d5a9c851`.
+`541c625547f34c0990b88e206e88626bd204d91796966d1b1015f6591af4da00`.
 Следующие коммиты документации в GitHub не требуют смены серверной ревизии.
 
 | Контейнер | Работающий образ |
 | --- | --- |
 | `loginom-dock-openviking-1` | `loginom-dock:studio-landing-70411dfe` |
-| `loginom-dock-caddy-1` | `loginom-dock:landing-8b14da6f` |
+| `loginom-dock-caddy-1` | `loginom-dock:landing-03019de7` |
 | `loginom-dock-ollama-1` | `ollama/ollama@sha256:020e4134285e2ef4d8fd801234176de3b4faadc992a3eb06c8e66a2f9d4c4ba2` |
 | `loginom-dock-gitlab-gateway-1` | `caddy@sha256:df7f1c2fb114453b951de51a98efc010db1655a92c2e86be6706714e2417a78d` |
 | `loginom-dock-gitlab-lfs-proxy-1` | `loginom-dock:stage2-b2975a94` |
@@ -103,7 +103,7 @@ SHA-256 `source.tar.gz`:
 Image ID приложения:
 `sha256:291a9afdde3696ef84cb5ea674c93f5c09bfa4268cd59978cca7cf7d52ff6066`.
 Image ID Caddy/лендинга:
-`sha256:f25630732c4dd50c94e82ea49f2411125b19bf9ada7e7ac245b193ff7756a4d5`.
+`sha256:088f7cb04f4c09dc969a8b88b605a5f28ff3267db16adbd961d395b5d738ba35`.
 Приложение и Studio не пересобирались при обновлении `0.1.0-rc.2`: они сохранены
 на прежнем проверенном образе `loginom-dock:studio-landing-70411dfe`. Другие два
 вспомогательных контейнера также сохранены на прежних проверенных образах.
