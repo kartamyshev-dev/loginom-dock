@@ -31,7 +31,6 @@ document.querySelectorAll('[data-example]').forEach(button => button.addEventLis
   document.querySelectorAll('[data-example]').forEach(el => el.setAttribute('aria-pressed', String(el === button)));
   byId('example-prompt').textContent = examples[button.dataset.example];
   byId('example-fixture').hidden = button.dataset.example !== 'create';
-  byId('expected-result').hidden = button.dataset.example !== 'create';
 }));
 document.querySelectorAll('[data-copy-target]').forEach(button => button.addEventListener('click', async () => {
   const original = button.textContent;
