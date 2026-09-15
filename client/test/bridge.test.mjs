@@ -4,7 +4,41 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { createRedactor } from '../lib/redact.mjs';
-import { actionReply } from '../lib/bridge.mjs';
+import { actionReply, browserProcessEnvironment } from '../lib/bridge.mjs';
+import { getDefaultEnvironment } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+const desktopEnvironment = { DISPLAY: ':98', XAUTHORITY: '/unit/Xauthority',
+  XDG_RUNTIME_DIR: '/unit/runtime', WAYLAND_DISPLAY: 'wayland-test' };
+
+test('Linux browser receives only desktop settings in addition to the SDK environment', () => {
+  const environment = { ...desktopEnvironment, DOCK_TEST_SECRET: 'private',
+    NODE_OPTIONS: '--require=/untrusted.js', LD_PRELOAD: '/untrusted.so',
+    PLAYWRIGHT_BROWSERS_PATH: '/untrusted/browser' };
+  assert.deepEqual(browserProcessEnvironment('/pinned/browser', { platform: 'linux', environment }),
+    { ...getDefaultEnvironment(), ...desktopEnvironment, PLAYWRIGHT_BROWSERS_PATH: '/pinned/browser' });
+  assert.equal(environment.PLAYWRIGHT_BROWSERS_PATH, '/untrusted/browser');
+});
+
+for (const platform of ['darwin', 'win32']) {
+  test(`${platform} browser environment is identical to the pre-fix environment`, () => {
+    // Any accidental read of Linux settings on another platform fails the test.
+    const environment = new Proxy(desktopEnvironment, { get() { throw Error('Unexpected desktop environment access'); } });
+    assert.deepEqual(browserProcessEnvironment('/pinned/browser', { platform, environment }),
+      { ...getDefaultEnvironment(), PLAYWRIGHT_BROWSERS_PATH: '/pinned/browser' });
+  });
+}
+
+for (const [name, environment] of [
+  ['absent settings', {}],
+  ['empty settings', Object.fromEntries(Object.keys(desktopEnvironment).map(key => [key, '']))],
+  ['shell functions', Object.fromEntries(Object.keys(desktopEnvironment).map(key => [key, '() { echo unsafe; }']))],
+  ['non-string settings', { DISPLAY: undefined, XAUTHORITY: null, XDG_RUNTIME_DIR: 123, WAYLAND_DISPLAY: false }],
+]) {
+  test(`Linux browser omits ${name}`, () => {
+    assert.deepEqual(browserProcessEnvironment('/pinned/browser', { platform: 'linux', environment }),
+      { ...getDefaultEnvironment(), PLAYWRIGHT_BROWSERS_PATH: '/pinned/browser' });
+  });
+}
 
 test('observation usage is a separate bounded hint and never changes the authoritative receipt', () => {
   const receipt = { status: 'SUCCEEDED', action_key: 'workspace.observe', operation_id: 'receipt-only',
@@ -52,7 +86,7 @@ test('observation usage is a separate bounded hint and never changes the authori
 // Module mocks are isolated to this child process, so actual SDK and bridge
 // imports used by the other suites retain their original implementations.
 test('bridge keeps application feedback recoverable over the MCP protocol', async () => {
-  const environment = { ...process.env };
+  const environment = { ...process.env, ...desktopEnvironment, DOCK_TEST_SECRET: 'must-not-reach-browser' };
   delete environment.NODE_TEST_CONTEXT;
   let result;
   try {
