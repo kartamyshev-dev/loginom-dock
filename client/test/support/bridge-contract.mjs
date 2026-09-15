@@ -36,7 +36,8 @@ test('MCP application refusals remain typed normal content and the same connecti
       return { content: [{ type: 'text', text: JSON.stringify(output) }] };
     }
   }
-  class ExternalTransport { constructor() {} }
+  let browserEnvironment;
+  class ExternalTransport { constructor(options) { if (options?.env) browserEnvironment = options.env; } }
   mock.module('@modelcontextprotocol/sdk/client/index.js', { namedExports: { Client: ExternalClient } });
   mock.module('@modelcontextprotocol/sdk/client/stdio.js', { namedExports: { StdioClientTransport: ExternalTransport, getDefaultEnvironment: () => ({}) } });
   mock.module('@modelcontextprotocol/sdk/client/streamableHttp.js', { namedExports: { StreamableHTTPClientTransport: ExternalTransport } });
@@ -62,6 +63,13 @@ test('MCP application refusals remain typed normal content and the same connecti
     const admitted=await session.artifactStore.admit({sourcePath,name:'sales.csv',bytes:3,
       sha256:createHash('sha256').update('abc').digest('hex')});
     bridge = await createBridge(config, session);
+    for (const key of ['DISPLAY', 'XAUTHORITY', 'XDG_RUNTIME_DIR', 'WAYLAND_DISPLAY']) {
+      if (process.platform === 'linux' && process.env[key] && !process.env[key].startsWith('()'))
+        assert.equal(browserEnvironment[key], process.env[key]);
+      else assert.equal(Object.hasOwn(browserEnvironment, key), false);
+    }
+    assert.equal(browserEnvironment.PLAYWRIGHT_BROWSERS_PATH, session.browserRoot);
+    assert.equal(browserEnvironment.DOCK_TEST_SECRET, undefined);
     client = new ProtocolClient({ name: 'test-agent', version: '1.0.0' });
     const [agentTransport, bridgeTransport] = InMemoryTransport.createLinkedPair();
     await Promise.all([bridge.server.connect(bridgeTransport), client.connect(agentTransport)]);

@@ -58,6 +58,19 @@ const diagnosticTool = {
   annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
 };
 
+export function browserProcessEnvironment(browserRoot, { platform = process.platform, environment = process.env } = {}) {
+  const inherited = { ...getDefaultEnvironment(), PLAYWRIGHT_BROWSERS_PATH: browserRoot };
+  // Only Linux needs these additional desktop connection settings. Other
+  // platforms retain the SDK environment and pinned browser path unchanged.
+  if (platform === 'linux') {
+    for (const key of ['DISPLAY', 'XAUTHORITY', 'XDG_RUNTIME_DIR', 'WAYLAND_DISPLAY']) {
+      const value = environment[key];
+      if (typeof value === 'string' && value.length > 0 && !value.startsWith('()')) inherited[key] = value;
+    }
+  }
+  return inherited;
+}
+
 export async function createBridge(config, session) {
   const admitHostArtifacts = createHostArtifactAdmission(config, session);
   const userProfile = config.resultProfile === 'user-v1';
@@ -78,7 +91,7 @@ export async function createBridge(config, session) {
   const browserTransport = new StdioClientTransport({
     command: process.execPath,
     args: [session.browserCli, '--config', session.browserConfig],
-    env: { ...getDefaultEnvironment(), PLAYWRIGHT_BROWSERS_PATH: session.browserRoot },
+    env: browserProcessEnvironment(session.browserRoot),
     cwd: session.directory, stderr: 'pipe',
   });
   // The pinned SDK emits transport.onclose from the child-process 'close'
